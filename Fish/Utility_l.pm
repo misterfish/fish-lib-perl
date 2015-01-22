@@ -136,9 +136,9 @@ sub before(&@) {
 }
 
 sub pairwise(&@) {
-    runtime_import 'List::Util';
+    runtime_import 'List::MoreUtils';
 
-    &List::Util::pairwise
+    &List::MoreUtils::pairwise
 }
 
 # Called as:
