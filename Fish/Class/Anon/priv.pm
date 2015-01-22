@@ -5,9 +5,9 @@ use 5.18.0;
 =head
 
 Not intended to be 'use'd directly. 
-Is used internally by ::anon for the 'p' member.
+Is used internally by ::anon for the '_p' member.
 
-Currently the p member has these methods:
+Currently the _p member has these methods:
 
 keys
 keysr
@@ -21,12 +21,12 @@ my $a = o(
    b => 2,
 );
 
-say $a->p->keys;
+say $a->_p->keys;
 
 # order not guaranteed
 > b a
 
-say list $a->p->keysr;
+say list $a->_p->keysr;
 
 # order not guaranteed
 > b a
@@ -36,12 +36,12 @@ my $b = om(
     b => sub { shift->a },
 );
 
-say $b->p->keys;
+say $b->_p->keys;
 
 # order not guaranteed
 > a b
 
-say $b->p->mode_method;
+say $b->_p->mode_method;
 
 > 1
 

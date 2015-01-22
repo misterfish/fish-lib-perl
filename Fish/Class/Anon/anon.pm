@@ -21,7 +21,7 @@ our $AUTOLOAD; # resolve arbitrary method names.
 # Disallow the following words as accessor names.
 # Note that o is actually ok.
 my @RESERVED = qw,
-    p
+    _p
 
     new
     AUTOLOAD
@@ -47,7 +47,7 @@ sub new {
     $self->{$_} and 
         ierror "$_ is an invalid (reserved) key for anonymous object" for @RESERVED;
 
-    $self->{p} = Fish::Class::Anon::priv->new(
+    $self->{_p} = Fish::Class::Anon::priv->new(
         keysr => \@keys,
     );
     bless $self, $pack;
@@ -62,7 +62,7 @@ sub AUTOLOAD {
     $name =~ s/.*://;
 
     if (not exists $self->{$name}) {
-        if ($self->p->default_undef) {
+        if ($self->_p->default_undef) {
             return undef;
         }
         else {
@@ -77,7 +77,7 @@ sub AUTOLOAD {
     # passing the o() object as self. 
     # So, setting is not possible with subs.
 
-    if (ref $thing eq 'CODE' and $self->p->mode_method) {
+    if (ref $thing eq 'CODE' and $self->_p->mode_method) {
         return $thing->($self, @_);
     }
 

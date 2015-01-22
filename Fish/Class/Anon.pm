@@ -46,7 +46,7 @@ sub new_obj {
 # Should not be called as class method.
 sub o { 
     my $anon = __PACKAGE__->new_obj(@_);
-    $anon->p->mode_method(0);
+    $anon->_p->mode_method(0);
 
     $anon
 }
@@ -55,7 +55,7 @@ sub o {
 # Should not be called as class method.
 sub om {
     my $anon = &o; # pass context
-    $anon->p->mode_method(1);
+    $anon->_p->mode_method(1);
 
     $anon
 }
@@ -64,7 +64,7 @@ sub om {
 # Should not be called as class method.
 sub od {
     my $anon = &o; # pass context
-    $anon->p->default_undef(1);
+    $anon->_p->default_undef(1);
 
     $anon
 }

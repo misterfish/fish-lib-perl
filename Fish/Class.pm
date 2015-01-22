@@ -61,7 +61,7 @@ say $o->key2;
 my $l = $o->key3;
 push @$l, 'val1', 'val2';
 
-And, p is reserved.
+And, _p is reserved.
 
 - - -
 
