@@ -29,12 +29,14 @@ use File::stat;
 use Fish::Utility;
 
 =head Loaded dynamically when needed to improve startup time:
+Although runtime_import was causing a segfault with List::MoreUtils.
 
 use Fish::Iter 'iter', 'iterab';
 use List::Util 'first';
-use List::MoreUtils 'before', 'pairwise'; #firstn, pairwiser
 
 =cut
+
+use List::MoreUtils 'before', 'pairwise'; #firstn, pairwiser
 
 # Prototype must match Fish::Iter.
 sub iter (+) {
@@ -123,23 +125,32 @@ sub eachr(_) {
         (warn, undef);
 }
 
+# Check XX
 sub first(&@) {
     runtime_import 'List::Util';
 
     &List::Util::first
 }
 
+# Check XX
 sub before(&@) {
-    runtime_import 'List::Util';
-
-    &List::Util::before
-}
-
-sub pairwise(&@) {
     runtime_import 'List::MoreUtils';
 
-    &List::MoreUtils::pairwise
+    &List::MoreUtils::before
 }
+
+#sub pairwise(&@) {
+#    #warn 'imp1';
+#    #runtime_import 'List::MoreUtils';
+#    #warn 'imp2';
+#
+#    use List::MoreUtils;
+#
+#    #&List::MoreUtils::pairwise
+#    #
+#    List::MoreUtils::pairwise(shift, shift, shift)
+#    #{ a => 1 }
+#}
 
 # Called as:
 # contains $arrayref, $search
@@ -273,12 +284,15 @@ sub pairwiser(&$$) {
 
     my ($package, $filename, $line) = caller;
 
+    # Causes segfault.
+    #runtime_import 'List::MoreUtils';
+
     no strict 'refs';
-    pairwise { 
+    List::MoreUtils::pairwise( sub { 
         ${"${package}::a"} = $a;
         ${"${package}::b"} = $b;
         $sub->(@_) 
-    } @$a1, @$a2;
+    }, @$a1, @$a2);
 }
 
 sub chd(_@) {
