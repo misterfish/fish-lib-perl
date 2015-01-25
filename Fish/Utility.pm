@@ -402,11 +402,13 @@ sub safeclose {
 sub error {
     my ($opts, $string) = _process_info_opts(@_);
 
-    my $nl = $string ? "\n" : ''; # print line and file if no string.
+    my $stack = $string ? 0 : 1; #stacktrace
     $string = "Something's wrong, dying" unless $string;
     _disable_colors_temp(1) if $opts->{disable_colors};
 
-    die R e8 "$BULLET ", e8 $string, $nl;
+    my $msg = join '', R e8 "$BULLET ", e8 $string, "\n";
+
+    $stack ? confess $msg : die $msg;
 }
 
 # For programmer and very internal errors.
