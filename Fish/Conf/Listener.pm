@@ -2,7 +2,7 @@
 
 package Fish::Conf::Listener;
 
-use 5.20.0;
+use 5.18.0;
 
 BEGIN {
     use File::Basename;
