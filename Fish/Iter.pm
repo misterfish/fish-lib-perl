@@ -61,6 +61,10 @@ sub iter_old (@) {
 #        while (my $i = iter @$array_ref)
 #        while (my $i = iter %$hash_ref)
 
+# Allow this:
+# say sprintf "%s -> %s", it->k, it->v while iter %a;
+# Very thread-unsafe and anything nested will obviously not work.
+
 my $Last;
 
 sub it {

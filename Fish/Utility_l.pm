@@ -170,17 +170,21 @@ sub contains (+_) {
     containsr $ary, $search
 }
 
+# No limit.
 sub slurp {
     my ($arg, $opt) = @_;
     local $/ = undef;
+    my $handle;
     if (ref $arg eq 'GLOB' or ref $arg eq 'IO::Handle') {
-        return <$arg>;
+        $handle = $arg;
     }
     else {
         # caller can set no_die in opt
-        my $fh = safeopen $arg, $opt or warn, return;
-        return <$fh>;
+        $handle = safeopen $arg, $opt or war, # safeopen prints msg
+            return;
     }
+
+    <$handle>
 }
 
 sub slurp8 {
