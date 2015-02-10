@@ -49,7 +49,8 @@ sub new {
 
     $self->{_p} = Fish::Class::Anon::priv->new(
         keysr => \@keys,
-    );
+        _anon => $self,
+    )->init;
     bless $self, $pack;
 }
 

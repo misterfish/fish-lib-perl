@@ -5,10 +5,6 @@ use 5.18.0;
 use base 'Exporter';
 
 BEGIN {
-    # Things which look like or be reserved words.
-    our @EXPORT_OK = qw,
-    ,;
-
     our @EXPORT = qw,
         runtime_import
         sys sys_system sys_chomp sys_ok sys_code 
@@ -40,7 +36,8 @@ use utf8;
 use Term::ANSIColor ();
 use Carp 'cluck', 'confess';
 
-my @BULLETS = qw, ৠ ꣐ ⩕ ⨏ ⨎ ٭ ᳅ 𝇚 𝄢 𝄓 𝄋 𝁐 ,;
+#my @BULLETS = qw, ꣐ ⩕ ⨏ ⨎ ٭ ᳅ 𝇚 𝄢 𝄓 𝄋 𝁐 ,;
+my @BULLETS = qw, ꣐ ⩕ ٭ ᳅ 𝇚 𝄢 𝄓 𝄋 𝁐 ,;
 my $BULLET = $BULLETS[int rand @BULLETS];
 
 our $Cmd_verbose = 0;
@@ -52,10 +49,9 @@ our $Force_colors = 0;
 
 our $CHECK = '✔';
 our $CROSS = '✘';
-#our $BRACK_L = '⧼'; # 29fc
-#our $BRACK_R = '⧽'; # 29fd
-#U+3008 LEFT ANGLE BRACKET
-#U+3009 RIGHT ANGLE BRACKET
+
+# U+3008 LEFT ANGLE BRACKET
+# U+3009 RIGHT ANGLE BRACKET
 our $BRACK_L = '〈';
 our $BRACK_R = '〉';
 

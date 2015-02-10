@@ -13,6 +13,7 @@ keys
 keysr
 mode_method
 default_undef
+has
 
 e.g:
 
@@ -48,12 +49,33 @@ say $b->_p->mode_method;
 =cut
 
 use Fish::Class 'class';
+# keysr and _anon are provided in constructor.
 class 'Fish::Class::Anon::priv', 
-    [qw, keysr mode_method default_undef ,];
+    [qw, _anon keysr keysh mode_method default_undef ,];
+
+
+package Fish::Class::Anon::priv;
+
+sub init {
+    my ($self) = @_;
+
+    my $keysr = $self->keysr;
+    $self->keysh({
+        map { $_ => 1 } @$keysr
+    });
+
+    $self
+}
 
 sub keys { 
     my $r = shift->keysr;
     @$r
+}
+
+sub has {
+    my ($self, $prop) = @_;
+
+    exists $self->keysh->{$prop}
 }
 
 1;

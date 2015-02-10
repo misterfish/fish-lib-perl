@@ -171,7 +171,7 @@ sub contains (+_) {
 }
 
 # No limit.
-sub slurp {
+sub slurp(_@) {
     my ($arg, $opt) = @_;
     local $/ = undef;
     my $handle;
@@ -187,7 +187,7 @@ sub slurp {
     <$handle>
 }
 
-sub slurp8 {
+sub slurp8(_@) {
     my ($arg, $opt) = @_;
     $opt ||= {};
     $opt->{utf8} = 1;
@@ -195,11 +195,11 @@ sub slurp8 {
     slurp($arg, $opt)
 }
 
-sub slurpn($$) {
+sub slurpn(_@) {
     my ($size, $arg) = @_;
     _slurpn($size, $arg, 0);
 }
-sub slurpn8($$) {
+sub slurpn8(_@) {
     my ($size, $arg) = @_;
     _slurpn($size, $arg, 1);
 }
