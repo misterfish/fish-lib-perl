@@ -51,11 +51,13 @@ sub opt {
         my $v = $i->v;
         defined $v or iwar("Undef in opt spec"),
             return;
-        $spec_k = 
-            $v eq 'f'       ? "$k" :
-            $v eq 'i'       ? "$k=i" :
-            $v eq 'r'       ? "$k=f" : # 'float'
-            $v eq 's'       ? "$k=s" : 
+        # opts{k} = undef for scalar, [] for list
+        ($spec_k, $opts{$k}) = 
+            $v eq 'f'       ? ("$k", undef) :
+            $v eq 'i'       ? ("$k=i", undef) :
+            $v eq 'r'       ? ("$k=f", undef) : # 'float'
+            $v eq 's'       ? ("$k=s", undef) : 
+            $v eq 'ms'       ? ("$k=s@", []) :  # multiple strings (e.g. -X 1 -X 2)
             (iwar("Bad spec:", BR $v), 
                 return
             );
