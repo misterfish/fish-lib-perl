@@ -680,6 +680,8 @@ sub find_children(_@) {
 sub find_children_r {
     runtime_import 'HTML::TreeBuilder';
 
+    # Would be nice if first arg could also be an HTML::Element. XX
+
     my ($r, $arg1, @rest) = @_;
     my $opt;
     my @spec;
