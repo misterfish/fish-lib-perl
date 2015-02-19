@@ -10,7 +10,7 @@ BEGIN {
         sys sys_system sys_chomp sys_ok sys_code 
         sysl sysll 
         safeopen safeclose 
-        info_level verbose_cmds die_cmds
+        info_level verbose_cmds die_cmds die_open
         error ierror errortrace
         war warl warreturn iwar wartrace 
         info ask errortrace
@@ -41,7 +41,8 @@ my @BULLETS = qw, ꣐ ⩕ ٭ ᳅ 𝇚 𝄢 𝄓 𝄋 𝁐 ,;
 my $BULLET = $BULLETS[int rand @BULLETS];
 
 our $Cmd_verbose = 0;
-our $Cmd_die = 1;
+our $Die_cmd = 1;
+our $Die_open = 1;
 our $Info_level = 1;
 
 our $Disable_colors = 0;
@@ -77,9 +78,15 @@ sub verbose_cmds { shift if _class_method(@_);
 }
 
 sub die_cmds { shift if _class_method(@_);
-    $Cmd_die = shift if @_;
+    $Die_cmd = shift if @_;
 
-    $Cmd_die
+    $Die_cmd
+}
+
+sub die_open { shift if _class_method(@_);
+    $Die_open = shift if @_;
+
+    $Die_open
 }
 
 sub info_level { shift if _class_method(@_);
@@ -168,7 +175,7 @@ sub sys(_@) {
         $opt = {};
     }
 
-    $die //= $Cmd_die;
+    $die //= $Die_cmd;
     $verbose //= $Cmd_verbose;
 
     $die = 0 if wantarray; # they want a code back
@@ -244,7 +251,7 @@ sub sys(_@) {
 sub sys_system {
     my ($command, $opt) = @_;
     $opt //= {};
-    my $die = $opt->{die} // $Cmd_die;
+    my $die = $opt->{die} // $Die_cmd;
     my $quiet = $opt->{quiet} // 0;
 
     strip_r(\$command);
@@ -321,7 +328,7 @@ sub safeopen {
 
     my $file = shift;
 
-    my $die;
+    my $die = $Die_open;
     my $is_dir;
 
     my $arg2 = shift;
@@ -339,8 +346,6 @@ sub safeopen {
     else {
         $die = $arg2;
     }
-
-    $die //= 1;
 
     if ( -d $file ) {
         if (! $is_dir) {
@@ -432,8 +437,10 @@ sub war {
     }
 
     if ($show_line_num) {
-        my $backtrace = $opts->{backtrace} // 1;
+        my $backtrace = $opts->{backtrace} // 0;
         my ($package, $filename, $line) = caller $backtrace;
+        $filename //= "(filename unknown)"; # why??
+        $line //= "(line unknown)"; # why??
         $string .= sprintf " (%s:%s)", Y $filename, BR $line;
     }
     _disable_colors_temp(1) if $opts->{disable_colors};
@@ -736,10 +743,14 @@ sub runtime_import {
     $opt //= {};
     my $die = $opt->{die} // 1;
 
+    my $ok = 1;
     eval "use $pack; 1" or do {
         my $msg = sprintf 'Could not import package %s at runtime: %s', BR $pack, BR $@;
         $die ? ierror $msg : iwar $msg;
+        $ok = 0;
     };
+
+    $ok
 }
 
 # Move out XX
