@@ -54,13 +54,13 @@ sub iterab(+) {
 
 sub list ($) { 
     my $s = shift;
-    ref $s eq 'ARRAY' or die "need array ref to list()";
+    ref $s eq 'ARRAY' or ierror "need array ref to list()";
     return @$s;
 }
 
 sub hash {
     my $s = shift;
-    ref $s eq 'HASH' or die "need hash ref to hash()";
+    ref $s eq 'HASH' or ierror "need hash ref to hash()";
     return %$s;
 }
 

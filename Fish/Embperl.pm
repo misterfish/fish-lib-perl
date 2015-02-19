@@ -31,7 +31,8 @@ sub getOUT {
         }
     }
     my $pack = $package . '::';
-    my %sym_table = hash soft_ref $pack;
+    my $ref = soft_ref $pack or warn, return;
+    my %sym_table = hash $ref;
     my $glob = $sym_table{OUT} or warn, return; # star thing
     my $fh = *$glob{GLOB} or warn, return; # foo thing
 

@@ -12,14 +12,16 @@ This module will steal Ctl-c and has special exit routines.
 
 package Fish::Sq;
 
-use 5.14.0;
+use 5.18.0;
 
 use Moose;
 
 use DBI;
 use Data::Dumper 'Dumper';
 
-use Fish::Utility_a qw, sys_ok war R G BR BB e8 d8 ,;
+use Fish::Utility qw, sys_ok war R G BR BB e8 d8 ,;
+
+use Fish::Utility qw, sys shell_quote,;
 
 # - - - - Static.
 
@@ -50,6 +52,8 @@ has _num_updates => (
     },
     default => 0,
 );
+
+# Constructor:
 
 has file => (
     is => 'ro',
@@ -96,6 +100,8 @@ has chmod => (
     isa => 'Str',
 );
 
+# - - - - - / Constructor
+
 # internal, for referencing static @Status ary, not currently necessary.
 has _idx => (
     is => 'ro',
@@ -123,10 +129,20 @@ sub BUILD {
     my ($self) = @_;
     my $file = $self->file;
 
-    if ($self->ro and ! -e $file) {
-        war "File", R $file, "doesn't exist and 'ro' flag was given -> sq undefined.";
-        $self->_set_error(1);
-        return;
+    if (not -e $file) {
+        my $err;
+        if ($self->ro) {
+            war "File", BR $file, "doesn't exist and 'ro' flag was given -> sq undefined.";
+            $err = 1;
+        }
+        if (not sys_ok sprintf qq, touch %s ,, shell_quote $file) {
+            war "File", BR $file, "doesn't exist and unable to create it.";
+            $err = 1;
+        }
+        if ($err) {
+            $self->_set_error(1);
+            return;
+        }
     }
 
     $self->_has_stdout( -t STDOUT );
