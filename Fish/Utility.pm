@@ -9,7 +9,7 @@ BEGIN {
         runtime_import
         sys sys_system sys_chomp sys_ok sys_code 
         sysl sysll 
-        safeopen safeclose 
+        safeopen safeopen_try safeclose 
         info_level verbose_cmds die_cmds die_open
         error ierror errortrace
         war warl warreturn iwar wartrace 
@@ -317,6 +317,21 @@ sub sys_ok {
 }
 
 
+sub safeopen_try {
+    iwar("called incorrectly"), 
+        return if @_ > 2;
+
+    my ($file, $opt) = @_;
+    $opt //= {};
+
+    iwar("called incorrectly"), 
+        return if ref $opt ne 'HASH' or not $file;
+
+    $opt->{die} = 0;
+    $opt->{quiet} = 1;
+
+    safeopen($file, $opt)
+}
 
 # If used for opening commands, can be tricky (impossible?) to get error
 # messages when the command exists but fails (e.g. find /non/existent/path)
@@ -324,7 +339,8 @@ sub sys_ok {
 # close($fh) (or use safeclose).
 
 sub safeopen {
-    (scalar @_ < 3) || error("safeopen() called incorrectly");
+    iwar("called incorrectly"),
+        return unless @_ < 3;
 
     my $file = shift;
 

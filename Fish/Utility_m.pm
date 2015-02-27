@@ -798,6 +798,7 @@ sub find_children_r {
             @new_children = map { $_->attr($as_attr) // () } @children;
         }
         elsif ($as_elem) {
+            @new_children = @children;
         }
         return @new_children;
     }
