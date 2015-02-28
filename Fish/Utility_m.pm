@@ -670,6 +670,18 @@ sub find_children(_@) {
     find_children_r(\$s, @rest)
 }
 
+# $r is a reference to a scalar or to a HTML::Element.
+# $arg1 can be an array: e.g. ['html']
+# $arg1 can be a hash: e.g. { as => 'html' } or { as_html => 1 }
+# Types are 'html', 'inner_html', 'text' (default), 'elem', and 'attr'.
+# 'attr' has to be given as { as_attr => <attr-name> }.
+# The others can use the { as_xxx => 1 } form or the array form.
+# @rest gives criteria to look_down. 
+# _tag is special.
+#  id => 'inner-div', class => 'article', _tag => 'div'
+#
+# Can also be a sub (doesn't need to be part of a pair then):
+#  
 # example param:
 #         sub {
 #             my $c = $_[0]->attr('class') or return;
@@ -678,17 +690,37 @@ sub find_children(_@) {
 #
 
 sub find_children_r {
-    runtime_import 'HTML::TreeBuilder';
-
     my ($r, $arg1, @rest) = @_;
+
+    my $ref = ref $r;
+    my $build_tree;
+    if ($ref eq 'SCALAR') {
+        $build_tree = 1;
+        runtime_import 'HTML::TreeBuilder', { die => 0 } or iwar("Couldn't import", BR 'HTML::TreeBuilder'),
+            return ();
+
+    }
+    elsif ($ref eq 'HTML::Element') {
+        $build_tree = 0;
+    }
+    else {
+        war "Unexpected:", BR $ref;
+        return ();
+    }
+
+    $arg1 or iwar("Need arg1"),
+        return ();
+
     my $opt;
     my @spec;
-    if ($arg1 and ref $arg1 eq 'HASH') {
+    if (ref $arg1 eq 'HASH') {
         $opt = $arg1;
-        #my $spec = $opt->{spec} or wartrace("Don't know what to look for"), return;
-        #ref $spec eq 'ARRAY' or wartrace('Expecting array'), return;
-        #@spec = @$spec;
-        #wartrace 'Extra args ignored' if @rest;
+        @spec = @rest;
+    }
+    elsif (ref $arg1 eq 'ARRAY') {
+        @$arg1 == 1 or iwar("Need exactly one elem in array"), 
+            return ();
+        $opt = { as => shift @$arg1 };
         @spec = @rest;
     }
     else {
@@ -696,12 +728,16 @@ sub find_children_r {
     }
     $opt //= {};
     $opt->{as} //= '';
-    my ($as_text, $as_html, $as_attr, $as_elem) = (0) x 4;
+    my ($as_text, $as_html, $as_attr, $as_elem, $as_inner_html) = (0) x 
+        5;
     if ($opt->{as_text} || $opt->{as} eq 'text' ) {
         $as_text = 1;
     }
     if ($opt->{as_html} || $opt->{as} eq 'html') {
         $as_html = 1;
+    }
+    if ($opt->{as_inner_html} || $opt->{as} eq 'inner_html') {
+        $as_inner_html = 1;
     }
     if (my $a = $opt->{as_attr}) {
         $as_attr = $a;
@@ -712,9 +748,10 @@ sub find_children_r {
 
     {
         my $as = 0;
-        $_ && $as++ for $as_text, $as_html, $as_attr, $as_elem;
+        $_ && $as++ for $as_text, $as_html, $as_attr, $as_elem, $as_inner_html;
         if ($as == 0) {
             $as_text = 1;
+            $as = 1;
         }
 
         if ($as != 1) {
@@ -723,21 +760,47 @@ sub find_children_r {
         }
     }
 
-    my $t = HTML::TreeBuilder->new;
-    $t->parse($$r); # or XX
-    if (my @children = $t->look_down(@spec)) { #HTML::Element
+    my $root;
+    # Inherits methods of both HTML::Parser and HTML::Element.
+    if ($build_tree) {
+        $root = HTML::TreeBuilder->new;
+        # HTML::Parser
+        $root->parse($$r) or iwar("Couldn't parse."),
+            return ();
+    }
+    else {
+        $root = $r;
+    }
+
+    if (my @children = $root->look_down(@spec)) { #HTML::Element
+        my @new_children;
         if ($as_text) {
-            @children = map { $_->as_text } @children;
+            @new_children = map { $_->as_text } @children;
         }
         elsif ($as_html) {
-            @children = map { $_->as_HTML } @children;
+            @new_children = map { $_->as_HTML } @children;
+        }
+        elsif ($as_inner_html) {
+            for my $child (@children) {
+                # Returns HTML::Element or plain text.
+                # Note that the outer loop (look_down) never returns plain
+                # text (not sure what spec would even look like to produce
+                # that).
+                my @_children = $child->content_list;
+                my $child_string = join '', map { 
+                    # no ref => text
+                    ref $_ ? $_->as_HTML : $_
+                } @_children;
+                push @new_children, $child_string;
+            }
         }
         elsif ($as_attr) {
-            @children = map { $_->attr($as_attr) // () } @children;
+            @new_children = map { $_->attr($as_attr) // () } @children;
         }
         elsif ($as_elem) {
+            @new_children = @children;
         }
-        return @children;
+        return @new_children;
     }
     else {
         return ();
