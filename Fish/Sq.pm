@@ -88,6 +88,7 @@ has force_cleanup => (
     default => 0,
 );
 
+# Print progress msgs, etc., to stderr.
 has verbose => (
     is  => 'ro',
     isa => 'Bool',
