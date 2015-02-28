@@ -475,7 +475,7 @@ sub iwar {
     $string = join ': ', "Internal warning", @string;
     _disable_colors_temp(1) if $opts->{disable_colors};
 
-    war { show_line_num => 1, backtrace => 2 }, $string;
+    war { show_line_num => 1, backtrace => 1 }, $string;
 }
 
 
