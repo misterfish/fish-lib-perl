@@ -6,6 +6,8 @@ databases.
 Knows about transactions, can clean up after itself, allows
 logging of sql, etc.
 
+RaiseError and PrintError are true by default.
+
 This module will steal Ctl-c and has special exit routines.
 
 =cut
@@ -19,9 +21,7 @@ use Moose;
 use DBI;
 use Data::Dumper 'Dumper';
 
-use Fish::Utility qw, sys_ok war R G BR BB e8 d8 ,;
-
-use Fish::Utility qw, sys shell_quote,;
+use Fish::Utility qw, sys sys_ok shell_quote iwar war R G BR BB e8 d8 ,;
 
 # - - - - Static.
 
@@ -53,17 +53,28 @@ has _num_updates => (
     default => 0,
 );
 
-# Constructor:
+# - - - Constructor:
 
 has file => (
     is => 'ro',
     isa => 'Str',
 );
 
-# Complain if it doesn't exist (don't create).
-has ro => (
+has ro => ( # Complain if it doesn't exist (don't create).
     is  => 'ro',
     isa => 'Bool',
+);
+
+has print_error => (
+    is => 'ro',
+    isa => 'Bool',
+    default => 1,
+);
+
+has raise_error => (
+    is => 'ro',
+    isa => 'Bool',
+    default => 1,
 );
 
 has auto_commit => (
@@ -75,12 +86,6 @@ has force_cleanup => (
     is  => 'ro',
     isa => 'Bool',
     default => 0,
-);
-
-has status => (
-    is => 'ro',
-    isa => 'HashRef',
-    writer => 'set_status',
 );
 
 has verbose => (
@@ -102,6 +107,14 @@ has chmod => (
 
 # - - - - - / Constructor
 
+# - - - Public get, private set.
+
+has status => (
+    is => 'ro',
+    isa => 'HashRef',
+    writer => 'set_status',
+);
+
 # internal, for referencing static @Status ary, not currently necessary.
 has _idx => (
     is => 'ro',
@@ -114,9 +127,9 @@ has _idx => (
     default => -1,
 );
 
-has error => (
+has build_error => (
     is => 'ro',
-    writer => '_set_error',
+    writer => '_set_build_error',
     isa => 'Bool',
 );
 
@@ -140,7 +153,7 @@ sub BUILD {
             $err = 1;
         }
         if ($err) {
-            $self->_set_error(1);
+            $self->_set_build_error(1);
             return;
         }
     }
@@ -167,8 +180,8 @@ sub BUILD {
 
             AutoCommit  =>  $auto_commit,
 
-            PrintError  =>  1,
-            RaiseError  =>  1,
+            PrintError  =>  $self->print_error,
+            RaiseError  =>  $self->raise_error,
         }
     );
 
@@ -207,6 +220,9 @@ sub BUILD {
 sub add_column {
     my ($self, $table, $column_def) = @_;
     $self->do("alter table $table add column $column_def");
+    return iwar if $self->error;
+
+    1
 }
 
 sub add_index {
@@ -216,24 +232,35 @@ sub add_index {
     $opt //= {};
     my $i = $opt->{unique} ? 'unique index' : 'index';
     $self->do(sprintf "create $i%s$index_name on $table($indexed_column)", $opt->{if_not_exists} ? ' if not exists ' : '');
+    return iwar if $self->error;
+
+    1
 }
 
 sub add_table {
+    iwar 'allen';
     my ($self, $table, $def, $opt) = @_;
     $opt //= {};
-    $self->do(sprintf "create table%s$table (%s)", $opt->{if_not_exists} ? ' if not exists ' : '', $def);
+    $def = join ', ', @$def if ref $def eq 'ARRAY';
+    $self->do(sprintf "create table%s $table (%s)", $opt->{if_not_exists} ? ' if not exists' : '', $def);
+    return iwar if $self->error;
+
+    1
 }
 
 sub drop_table {
     my ($self, $table) = @_;
     $self->do("drop table $table");
+    return iwar if $self->error;
+
+    1
 }
 
 # For inserting etc., use execute.
 sub do {
     my $self = shift;
-    my $s = shift or war ("Bad args to do() (Sq)"), 
-        return;
+    my $s = shift or 
+        return iwar("Bad args to do() (Sq)");
 
     $self->status->{dirty} = 1 if ! $self->auto_commit;
 
@@ -244,6 +271,9 @@ sub do {
     $self->prog($msg);
 
     $self->dbh->do($s);
+    return iwar if $self->error;
+
+    1
 }
 
 # Show progress (if verbose), AND commit if enough statements have come through.
@@ -278,10 +308,13 @@ sub execute {
 
     $self->status->{dirty} = 1 if ! $self->auto_commit;
     $sth->execute(@bind);
+    return iwar if $self->error;
 
     my $msg = '';
     $msg = $self->sql_msg($sql) . ' / ' . join '|', @bind if $self->verbose;
     $self->prog($msg);
+
+    1
 }
 
 sub get {
@@ -292,12 +325,16 @@ sub get {
         war 'sql', $sql_print, 'bind', join '|', @bind;
     }
     my $sth = $self->dbh->prepare($sql);
+    return iwar if $self->error;
     $sth->execute(@bind);
+    return iwar if $self->error;
 
     my $res = $sth->fetchall_arrayref;
+    return iwar if $self->error;
+
     war '# results', scalar @$res if $self->verbose;
 
-    return $res;
+    $res
 }
 
 sub commit {
@@ -309,24 +346,32 @@ sub commit {
     
     $self->status->{committing} = 1;
 
+    my $ok = 1;
+
     eval { $self->dbh->commit } or do {
-        warn "Couldn't commit";
-        warn $self->dbh->errstr;
-        warn $@ if $@;
+        iwar "Couldn't commit";
+        iwar $self->dbh->errstr;
+        iwar $@ if $@;
         $self->rollback;
+
+        $ok = 0;
     };
 
     $self->status->{committing} = 0;
     $self->status->{dirty} = 0;
+
+    $ok
 }
 
 sub rollback {
     my ($self) = @_;
     war "Rolling back and quitting.";
-    $self->dbh->rollback or warn "Couldn't roll back:" . $self->dbh->errstr;
+    $self->dbh->rollback;
+    return iwar "Couldn't roll back:", $self->dbh->errstr if $self->error;
 
-    # quits everything
-    exit 1;
+    1
+    ### quits everything
+    ##exit 1;
 }
 
 sub has_column {
@@ -356,36 +401,53 @@ sub sql_msg {
     return G ("*sql ") . $sql;
 }
 
+# undef means error
+# otherwise 0 or 1
 sub _has_thing {
     # what = index / column
     my ($self, $table, $thing_name, $what) = @_;
 
-    # Die on errors (this is a private method).
-
-    $what eq 'index' or $what eq 'column' or $what eq 'table' or die;
+    $what eq 'index' or $what eq 'column' or $what eq 'table' or 
+        return iwar;
 
     # catalog, schema, table, type
     # schema is main ??
     my $sth = $self->dbh->table_info('', 'main', $table);
+    return iwar if $self->error;
     my $res = $self->dbh->selectall_arrayref($sth);
+    return iwar if $self->error or not $res;
 
     for (@$res) {
         my (undef, $schema, $_table, $_thing, undef, $create) = @$_;
         if ($table eq $_table) {
             if ($what eq 'index' and $_thing eq 'INDEX') {
-                $create =~ /^create (unique )?index $thing_name on $table/i and return 1;
+                return 1 if $create =~ m,^create (unique )?index $thing_name on $table,i;
             }
             elsif ($what eq 'column' and $_thing eq 'TABLE') {
-                $create =~ /^create table $table \((.+)\)/i or die;
+                $create =~ m,^create table $table \((.+)\),i or 
+                    return iwar;
                 my @s = split ',', $1;
-                /^ \s* $thing_name/x and return 1 for @s;
+                m, ^ \s* $thing_name ,x and 
+                    return 1 for @s;
             }
             elsif ($what eq 'table') {
                 return 1;
             }
         }
     }
-    return 0;
+
+    0
+}
+
+# Check for error. 
+# err is set to undef by DBI before almost every call.
+# undefined means ok.
+# false means warning, or 'success with information'.
+# true means error.
+sub error {
+    my ($self) = @_;
+
+    defined $self->dbh->err
 }
 
 
