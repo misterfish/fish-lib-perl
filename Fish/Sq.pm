@@ -238,7 +238,6 @@ sub add_index {
 }
 
 sub add_table {
-    iwar 'allen';
     my ($self, $table, $def, $opt) = @_;
     $opt //= {};
     $def = join ', ', @$def if ref $def eq 'ARRAY';
