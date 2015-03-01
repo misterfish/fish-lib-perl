@@ -173,7 +173,7 @@ sub contains (+_) {
 # No limit.
 sub slurp(_@) {
     my ($arg, $opt) = @_;
-    local $/ = undef;
+    local $/ = wantarray ? "\n" : undef;
     my $handle;
     if (ref $arg eq 'GLOB' or ref $arg eq 'IO::Handle') {
         $handle = $arg;
