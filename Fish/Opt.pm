@@ -24,7 +24,7 @@ my $opt = opt {...},
 
 =cut
 
-use Fish::Utility 'war', 'iwar', 'strip_s';
+use Fish::Utility 'war', 'iwar', 'strip_s', 'BR';
 use Fish::Class 'od';
 use Fish::Iter;
 

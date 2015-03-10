@@ -17,6 +17,7 @@ BEGIN {
         unshiftr pushr shiftr popr scalarr keysr eachr
         contains containsr firstn pairwiser
         chompp rl list hash binary
+        lazy mapp
         chd
         iter iterab
     ,;
@@ -325,16 +326,45 @@ sub _class_method {
 
 # e.g.:
 # while (def my $i = lazy 1, 9) { ... }
+# Won't work if interrupted.
+# Very thread-unsafe.
+#sub lazy {
+#    my ($a, $b) = @_;
+#    state $n;
+#    $n //= $a - 1;
+#
+#    ++$n > $b ? ($n = undef) : $n
+#}
 
+# e.g.:
+# while (def my $i = lazy 1, 9) { ... }
+# Very thread-unsafe.
+# Experimental (relies on stacktrace to know when to start over).
 sub lazy {
     my ($a, $b) = @_;
-    state $n = $a - 1;
+    state ($n, $pack, $fn, $line);
+    my ($cpack, $cfn, $cline) = caller;
+    # init
+    if ($pack ne $cpack or $fn ne $cfn or $line ne $cline) {
+        $n = $a - 1;
+        $pack = $cpack;
+        $fn = $cfn;
+        $line = $cline;
+    }
 
     ++$n > $b ? undef : $n
 }
 
 sub statt(_) {
     stat shift
+}
+
+# Like map { } @list but allows return statement within the block.
+
+sub mapp(&@) {
+    my ($sub, @list) = @_;
+
+    map { $sub->($_) } @list
 }
 
 1;
