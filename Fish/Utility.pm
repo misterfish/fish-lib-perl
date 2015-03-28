@@ -16,6 +16,7 @@ BEGIN {
         info ask errortrace
         sayf infof askf 
         e8 d8 remove_quoted_strings
+        bullet bullets brack_cmd_l brack_cmd_r
 strip_ptr 
         strip strip_s strip_r
         cross check_mark brackl brackr
@@ -68,6 +69,11 @@ sub wartrace;
 sub info(_@);
 sub safeopen;
 sub ps_running(_);
+
+sub bullet { $BULLET }
+sub bullets { @BULLETS }
+sub brack_cmd_l { $BRACK_CMD_L }
+sub brack_cmd_r { $BRACK_CMD_R }
 
 sub _cmd_bracket { $BRACK_CMD_L . shift . $BRACK_CMD_R }
 
@@ -197,20 +203,24 @@ sub sys(_@) {
 
     my $c = remove_quoted_strings($command); # for & check
 
-    $kill_err and $command = "$command 2>/dev/null";
-
     # & -> system
     if ( 
-        ($c =~ / ^ (.+) \s+ \& \s+ (.*) $ /x) || 
-        ($c =~ / ^ (.+) \s+ \& $/x)
+        ($c =~ m, ^ (.+) \s+ \& \s+ (.*) $ ,x) || 
+        ($c =~ m, ^ (.+) \s+ \& $ ,x)
     )
     {
-        say sprintf "%s [fork] %s", G e8 $BULLET, $command if $verbose;
+        my $redirect = ">/dev/null";
+        $redirect .= ' 2>/dev/null' if $kill_err;
+        $command =~ s, & ,$redirect &,x;
+
+        info sprintf "%s [fork] %s", G $BULLET, $command if $verbose;
         system("$command");
         $out = "[cmd immediately bg'ed, output not available]";
     } 
     # backquotes
     else {
+        $command = "$command 2>/dev/null" if $kill_err;
+
         say sprintf "%s %s", G e8 $BULLET, $command if $verbose;
         if ($wants_list) {
             @out = map { 

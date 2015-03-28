@@ -567,34 +567,44 @@ sub _class_method {
     $pack eq __PACKAGE__ or $pack eq 'Fish::Utility_a'
 }
 
+# Can be noisy on stdout. Use quiet option if necessary. But there is
+# currently no option to kill stderr.
 sub yes_no {
-    if (! -t STDOUT) {
-        info "\nyes_no: STDOUT not connected to tty, assuming no.";
-        return 0;
-    }
-    if (! -t STDIN) {
-        info "\nyes_no: STDIN not connected to tty, assuming no.";
-        return 0;
-    }
     my $opt = shift || {};
     if (ref $opt eq '') {
         $opt = 
             $opt eq 'yes' ? { default_yes => 1 } :
             $opt eq 'no'  ? { default_no  => 1 } :
-            (warn, return);
+            (iwar, 
+                return);
     }
     my $infinite = $opt->{infinite} // 1;
-
     my $default_yes = $opt->{default_yes} // 0;
     my $default_no = $opt->{default_no} // 0;
+    my $quiet = $opt->{quiet} // 0;
 
+    if (! -t STDOUT) {
+        if (not $quiet) {
+            say '';
+            info "yes_no: STDOUT not connected to tty, assuming no.";
+        }
+        return 0;
+    }
+    if (! -t STDIN) {
+        if (not $quiet) {
+            say '';
+            info "yes_no: STDIN not connected to tty, assuming no.";
+        }
+        return 0;
+    }
     if (my $d = $opt->{default}) {
         $d eq 'no' ?  $default_no = 1 :
         $d eq 'yes' ? $default_yes = 1 :
-        war ("Unknown 'default' opt given to yes_no()");
+        iwar "Unknown 'default' opt given to yes_no()";
     }
     my $question = $opt->{question} // $opt->{ask} // '';
-    $default_no and $default_yes and warn, return;
+    $default_no and $default_yes and iwar, 
+        return;
     my $y = $default_yes ? 'Y' : 'y';
     my $n = $default_no ? 'N' : 'n';
     ask "$question" if $question;
