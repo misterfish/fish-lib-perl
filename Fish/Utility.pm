@@ -12,7 +12,8 @@ BEGIN {
         safeopen safeopen_try safeclose 
         info_level verbose_cmds die_cmds die_open
         error ierror errortrace
-        war warl warreturn iwar wartrace 
+        war warl war0 
+        warreturn iwar wartrace 
         info ask errortrace
         sayf infof askf 
         e8 d8 remove_quoted_strings
@@ -345,8 +346,11 @@ sub safeopen_try {
 
 # If used for opening commands, can be tricky (impossible?) to get error
 # messages when the command exists but fails (e.g. find /non/existent/path)
-# To catch that, read from it once (<$fh>) and check the return value of
-# close($fh) (or use safeclose).
+# (Perl might launch a shell, for example if it sees shell metacharacters,
+# but also even if it sees quotes, for example. Then, the shell could
+# succeed, while the subcommand fails).
+# Try reading from it once (<$fh>) and also check the return value of
+# close($fh) (or use safeclose), but that's also not fool-proof. 
 
 sub safeopen {
     iwar("called incorrectly"),
@@ -457,27 +461,33 @@ sub war {
     my ($opts, $string) = _process_info_opts(@_);
 
     my $show_line_num = $opts->{show_line_num} // 0;
-    if (not $string) {
-        $string = "Something's wrong";
-        $show_line_num = 1;
-    }
+    $string ||= "Something's wrong.";
 
     if ($show_line_num) {
         my $backtrace = $opts->{backtrace} // 0;
         my ($package, $filename, $line) = caller $backtrace;
-        $filename //= "(filename unknown)"; # why??
-        $line //= "(line unknown)"; # why??
+        $filename //= "(filename unknown)";
+        $line //= "(line unknown)";
         $string .= sprintf " (%s:%s)", Y $filename, BR $line;
     }
     _disable_colors_temp(1) if $opts->{disable_colors};
 
-    utf8::encode $string;
-    warn BR e8 "$BULLET ", $string, "\n";
+    warn BR e8 "$BULLET ", e8 $string, "\n";
 
     _disable_colors_temp(0) if $opts->{disable_colors};
+
+    # so we can do return war ...
+    undef
+}
+
+sub war0 {
+    &war;
+
+    0
 }
 
 # For programmer and very internal warnings.
+
 sub iwar {
     my ($opts, $string) = _process_info_opts(@_);
 
@@ -499,7 +509,8 @@ sub warl {
     ()
 }
 
-# A version of war which returns the first arg. 
+# A version of war which returns the first arg, and passes the rest of the
+# args through to war. 
 sub warreturn {
     my ($arg, @warning) = @_;
     war(@warning);
