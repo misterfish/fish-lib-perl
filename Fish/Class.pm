@@ -2,7 +2,7 @@ package Fish::Class;
 
 =head
 
-Author: Allen Haim <allen@netherrealm.net>
+Author: Allen Haim <allen@netherrealm.net>, © 2015.
 Licence: GPL 3.0
 
 --- Requires: perl 5.18, and Class::XSAccessor.
