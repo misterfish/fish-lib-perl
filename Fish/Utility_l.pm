@@ -3,7 +3,6 @@ package Fish::Utility_l;
 use 5.18.0;
 
 BEGIN {
-    #use Exporter 'import';
     use base 'Exporter';
 
     # Things which look like or be reserved words.
@@ -143,7 +142,7 @@ sub first(&@) {
 
 # Check XX
 sub before(&@) {
-    runtime_import 'List::MoreUtils';
+    #runtime_import 'List::MoreUtils';
 
     &List::MoreUtils::before
 }

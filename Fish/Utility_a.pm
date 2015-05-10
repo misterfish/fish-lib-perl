@@ -5,9 +5,6 @@ package Fish::Utility_a;
 # use Fish::Utility_a 'a', 'b', 'c' to only take what you want.
 
 BEGIN {
-    # import better than base? XX
-    #use Exporter 'import'; 
-
     use base 'Exporter';
 
     use Fish::Utility;

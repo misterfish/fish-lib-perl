@@ -1,12 +1,9 @@
 package Fish::Embperl;
 
-use 5.14.0;
-
-use strict;
-use warnings;
+use 5.18.0;
 
 BEGIN {
-    our @ISA = 'Exporter';
+    use base 'Exporter';
     our @EXPORT = qw, mywarn err ,;
 }
 

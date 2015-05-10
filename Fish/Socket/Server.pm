@@ -2,25 +2,16 @@
 
 package Fish::Socket::Server;
 
-our $DEBUG;
 BEGIN {
     use File::Basename;
     push @INC, dirname $0;
-    # doesn't work
-    use constant DEBUG => 0;
-    use if DEBUG, 'Utility' => 'D2';
 }
 
-use 5.10.0;
-
-our $AUTOLOAD;
-
-use strict;
-use warnings;
-
-sub D2;
+use 5.18.0;
 
 use Socket;
+
+our $AUTOLOAD;
 
 sub new {
     my ($class) = @_;
@@ -42,7 +33,8 @@ sub listen_chomp {
 
 sub say {
     my ($self, $msg) = @_;
-    my $ch = $self->ch or warn("No client"), return;
+    my $ch = $self->ch or warn("No client"), 
+        return;
     print $ch $msg, "\n";
 }
 
@@ -51,7 +43,7 @@ sub AUTOLOAD {
     my $class = ref $self or die "$self is not an object";
 
     my $name = $AUTOLOAD;
-    $name =~ s/.*://;   # strip fully-qualified portion
+    $name =~ s/.*://;
 
     die "Can't access `$name' field in class $class" unless exists $self->{$name};
 

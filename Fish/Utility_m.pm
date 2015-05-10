@@ -3,7 +3,6 @@ package Fish::Utility_m;
 use 5.18.0;
 
 BEGIN {
-    #use Exporter 'import';
     use base 'Exporter';
 
     # Things which look like or be reserved words.

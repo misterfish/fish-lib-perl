@@ -1,14 +1,11 @@
 #!/usr/bin/perl
 
 package Fish::Socket::Server::tcp;
-use parent 'Fish::Socket::Server';
+use base 'Fish::Socket::Server';
 
-use 5.10.0;
+use 5.18.0;
 
 our $AUTOLOAD;
-
-use strict;
-use warnings;
 
 sub new {
     # host can be undef
@@ -17,8 +14,6 @@ sub new {
     my $self = $class->SUPER::new();
 
     my $proto = getprotobyname 'tcp';
-
-    DEBUG and D2 'proto', $proto;
 
     my $sh;
 
@@ -50,12 +45,6 @@ sub listen {
 
     my $msg = <$ch>;
 
-    if (DEBUG) {
-        D2 'paddr', $paddr;
-        D2 'port', $port;
-        D2 'iaddr', $iaddr;
-    }
-
     return wantarray ? ($msg, $port, $iaddr) : $msg;
 }
 
@@ -64,7 +53,7 @@ sub AUTOLOAD {
     my $class = ref $self or die "$self is not an object";
 
     my $name = $AUTOLOAD;
-    $name =~ s/.*://;   # strip fully-qualified portion
+    $name =~ s/.*://;
 
     die "Can't access `$name' field in class $class" unless exists $self->{$name};
 
