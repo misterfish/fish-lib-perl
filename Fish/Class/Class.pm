@@ -23,7 +23,9 @@ use Carp 'cluck', 'confess';
 
 use Fish::Class::Common qw, 
     is_int is_num is_non_neg_even 
-    symbol_table assign_soft_ref ierror 
+    symbol_table assign_soft_ref 
+    ierror iwar
+    list
 ,;
 
 local $SIG{__WARN__} = sub { &cluck };
@@ -34,8 +36,13 @@ sub class {
 
     my $e = sprintf "Error making class '%s':", $class;
 
-    # Private class data.
+    # Private class 'namespace'.
+    my $priv = {
+        accessors => [],
+    };
+
     my @accessors;
+    $priv->{accessors}= \@accessors;
 
     my $acc_string = '';
     my $superclass = '';
@@ -91,15 +98,11 @@ ENDEVAL
         for (my $i = 0; $i < @subs - 1; $i += 2) {
             my ($name, $sub) = @subs[$i, $i+1];
 
-            #iwar({backtrace => 1}, 'sub named _ is not allowed'), 
             iwar('sub named _ is not allowed'), 
                 next if $name eq '_';
 
             my $fullname = "$class::$name";
-            { 
-                no strict 'refs';
-                *$fullname = $sub;
-            }
+            assign_soft_ref $fullname, $sub;
         }
     }
 
@@ -111,14 +114,17 @@ ENDEVAL
     # (where superclass is currently defined as the first member of ISA to
     # have that method defined).
     #
-    # $self->_->keys gives a list ref to the keys (accessors).
+    # $self->_->keysr gives a list ref of accessors.
     #
     # Eventually, more things can go in _.
     {
-        my $fullname = "$class" . "::_";
+        my $fullname = $class . "::_";
         my $sub = sub {
             my ($self) = @_;
-            my $anon_object = Fish::Class::Anon->new_obj( 
+            # At runtime, we expect that Fish::Class::Anon has been use'd. 
+            # Note that we don't (can't) explicitly 'use' it (circular
+            # dependency on us).
+            my $underscore = Fish::Class::Anon->new_obj( 
 
                 # Note, self not passed, but closed over.
                 super => sub { 
@@ -136,21 +142,25 @@ ENDEVAL
                     }
                     ierror "Couldn't resolve supermethod '$func_name' for class $class" unless $super;
 
+                    # Look up func_name in the symbol table of the
+                    # superclass, and store it in $func.
                     my $sym_table = symbol_table($super);
                     my %sym_table = %$sym_table;
                     my $glob = $sym_table{$func_name};
                     my $func = *$glob{CODE};
 
+                    # Call it.
                     $func->($self, @args)
                 },
 
-                keys => \@accessors,
+                keysr => $priv->{accessors},
             );
 
-            $anon_object
+            $underscore
         };
 
-        # Directly assign to symbol table.
+        # Directly assign $sub to PACKAGE::_.
+        # Now $instance->_ works, and returns the $underscore object.
         assign_soft_ref $fullname, $sub;
     }
 }

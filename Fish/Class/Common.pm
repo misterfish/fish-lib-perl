@@ -13,17 +13,9 @@ BEGIN {
     our @EXPORT = qw, 
         is_int is_num is_non_neg_even
         symbol_table assign_soft_ref
-        contains
-        ierror 
+        contains list
+        ierror iwar
     ,;
-}
-
-sub contains (+_) {
-    my ($ary, $search) = @_; # $ary is indeed a reference
-    warn, 
-        return unless defined $search;
-
-    grep { defined $_ and $_ eq $search } @$ary
 }
 
 use Carp 'cluck', 'confess';
@@ -34,6 +26,19 @@ local $SIG{__DIE__} = \&confess;
 sub is_num(_);
 sub is_int(_);
 sub is_non_neg_even(_);
+
+sub contains (+_) {
+    my ($ary, $search) = @_; # $ary is indeed a reference
+    return iwar() unless defined $search;
+
+    grep { defined $_ and $_ eq $search } @$ary
+}
+
+sub list ($) { 
+    my $s = shift;
+    ref $s eq 'ARRAY' or ierror("need array ref to list()");
+    return @$s;
+}
 
 sub symbol_table {
     my ($name) = @_;
@@ -76,7 +81,10 @@ sub is_non_neg_even (_) {
     $s % 2 ? 0 : 1
 }
 
-# For programmer and very internal errors.
+# ierror/iwar: for programmer and very internal errors.  Basically copied
+# from an older version of Fish::Utility, in order to avoid a dependence on
+# it. 
+# Skips the fancier features (colors, more options). 
 sub ierror {
     my (@s) = @_;
 
@@ -86,12 +94,24 @@ sub ierror {
     confess $s, "\n";
 }
 
+sub iwar {
+    my ($s) = @_;
+
+    my @string = $s ? ($s) : ();
+    $s = join ': ', "Internal warning", @string;
+
+    cluck $s;
+
+    # so caller can do return iwar
+    undef
+}
+
 sub assign_soft_ref {
     my ($fullname, $value) = @_;
-    ierror "Bad call" unless defined $fullname;
+    ierror("Bad call") unless defined $fullname;
 
-    # perl magic -- assign directly to symbol table. Will die if fullname is
-    # nonsense.
+    # perl magic -- assign directly to symbol table. 
+    # Will die if fullname is nonsense.
     no strict 'refs';
     *$fullname = $value;
 }

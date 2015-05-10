@@ -73,10 +73,8 @@ sub AUTOLOAD {
 
     my $thing = $self->{$name};
 
-    # om():
-    # If it's a sub reference, call the sub as a 'method',
-    # passing the o() object as self. 
-    # So, setting is not possible with subs.
+    # om() (call it is a method, and pass the object explicitly as self. 
+    # See documentation in Fish::Class.
 
     if (ref $thing eq 'CODE' and $self->_p->mode_method) {
         return $thing->($self, @_);
