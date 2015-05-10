@@ -5,6 +5,7 @@ package Fish::Opt;
 Author: Allen Haim <allen@netherrealm.net>, © 2015.
 Source: github.com/misterfish/fish-lib-perl
 Licence: GPL 2.0
+Version: 0.5
 
 my $opt = opt {
     v   => 'f',         # flag, e.g. -v
@@ -29,6 +30,11 @@ my $opt = opt {...},
 =cut
 
 use 5.18.0;
+
+BEGIN {
+    use base 'Exporter';
+    our @EXPORT = 'opt';
+}
 
 use Fish::Utility 'war', 'iwar', 'strip_s', 'BR';
 use Fish::Class 'od';

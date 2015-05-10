@@ -5,18 +5,57 @@ package Fish::Iter;
 Author: Allen Haim <allen@netherrealm.net>, © 2015.
 Source: github.com/misterfish/fish-lib-perl
 Licence: GPL 2.0
+Version: 0.5
 
-=cut
+Some new ways to loop in perl. Meant to be fast for the programmer, not the
+machine.
 
+iter(r) functions encapsulate calls to 'each', for which each hash and array
+in perl maintains an internal state. 
+
+See perldoc -f each.
+
+iter(r)ab functions set $a and $b in the caller. Note that these already
+exist in your symbol table (that's why sort works). This is similar to how
+List::Util works.
+
+Usage:
+
+ while (my $i = iter @a) {
+     say sprintf "idx: %s -> val: %s", $i->k, $i->v;
+ }
+ while (my $i = iter %a) {
+     say sprintf "key: %s -> val: %s", $i->k, $i->v;
+ }
+ my $j;
+ say sprintf "idx: %s -> val: %s", $j->k, $j->v while $j = iter @a;
+ say sprintf "key: %s -> val: %s", $j->k, $j->v while $j = iter %a;
+
+ while (my $i = iter %hash) {}
+ while (my $i = iter @array) {}
+ while (my $i = iterr $array_ref) {}
+ while (my $i = iterr $hash_ref) {}
+ while (my $i = iter @$array_ref) {}
+ while (my $i = iter %$hash_ref) {}
+
+ while (iterab %hash) {
+     say sprintf "%s -> %s", $a, $b;
+ }
+ while (iterab @array) {}
+ while (iterrab $array_ref) {}
+ while (iterrab $hash_ref) {}
+ while (iterab @$array_ref) {}
+ while (iterab %$hash_ref) {}
 
 This is correct and will not end the iteration early if something is undef.
 The $i object is defined even if one of the elements is undef.
 
-while (my $i = iter @a) {
-    say sprintf "%s -> %s", $i->k, $i->v;
-}
+This also works, using a global object. Very thread-unsafe, and nested loops
+will obviously not work.
 
-say sprintf "%s -> %s", it->k, it->v while iter %a;
+Don't forget to import the function 'it'.
+
+ say sprintf "%s -> %s", it->k, it->v while iter %a;
 
 =cut
 
@@ -43,37 +82,6 @@ BEGIN {
     it
     ,;
 }
-
-# Old way:
-# Usage: while (my $i = iter each %hash)
-#        while (my $i = iter each @array)
-#        while (my $i = iter eachr $array_ref)
-#        while (my $i = iter eachr $hash_ref)
-#        while (my $i = iter eachr @$array_ref)
-#        while (my $i = iter eachr %$hash_ref)
-
-sub iter_old (@) {
-    my ($k, $v) = @_;
-    return unless defined $k;
-    my $i = _Iter->new(
-        a => $k,
-        b => $v,
-    );
-
-    $i
-}
-
-# New way:
-# Usage: while (my $i = iter %hash)
-#        while (my $i = iter @array)
-#        while (my $i = iterr $array_ref)
-#        while (my $i = iterr $hash_ref)
-#        while (my $i = iter @$array_ref)
-#        while (my $i = iter %$hash_ref)
-
-# Allow this:
-# say sprintf "%s -> %s", it->k, it->v while iter %a;
-# Very thread-unsafe and anything nested will obviously not work.
 
 my $Last;
 
@@ -108,13 +116,6 @@ sub iterr($) {
         $r eq 'ARRAY' ? iter(@$ref) :
         $r eq 'HASH' ? iter(%$ref) :
         die "Need arrayref or hashref to iterr.";
-}
-
-sub iterab_old(@) {
-    my ($package, $filename, $line) = caller;
-    my $eval = qq| (\$${package}::a, \$${package}::b ) = \@_ |;
-
-    eval $eval
 }
 
 sub iterab (+) {
