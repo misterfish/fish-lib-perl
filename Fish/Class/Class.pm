@@ -26,35 +26,37 @@ use Fish::Class::Common qw,
     symbol_table assign_soft_ref ierror 
 ,;
 
-local $SIG{__WARN__} = \&cluck;
-local $SIG{__DIE__} = \&confess;
+local $SIG{__WARN__} = sub { &cluck };
+local $SIG{__DIE__} = sub { &confess };
 
 sub class {
     my ($class, $spec, @subs) = @_;
 
-    my $e = sprintf "Error making class '%s'", $class;
+    my $e = sprintf "Error making class '%s':", $class;
+
+    # Private class data.
+    my @accessors;
 
     my $acc_string = '';
     my $superclass = '';
 
     if ($spec) {
-        my @accessors;
         if (ref $spec eq 'ARRAY') {
             @accessors = @$spec;
         }
         elsif (ref $spec eq 'HASH') {
             my $acc = $spec->{acc} // [];
             ref $acc eq 'ARRAY' or 
-                ierror 'need array';
+                ierror $e, 'Need array';
             @accessors = @$acc;
 
             if ($superclass = $spec->{extends}) {
                 ref $superclass and 
-                    ierror 'need string';
+                    ierror $e, 'Need string';
             }
         }
         else {
-            ierror 'bad spec';
+            ierror $e, 'Bad spec';
         }
         if (@accessors) {
             $acc_string = sprintf 
@@ -85,11 +87,14 @@ ENDEVAL
         ierror $e, "$@";
 
     if (@subs) {
-        ierror "$e", "need even-sized list of subs" unless is_non_neg_even @subs;
+        ierror $e, "need even-sized list of subs" unless is_non_neg_even @subs;
         for (my $i = 0; $i < @subs - 1; $i += 2) {
             my ($name, $sub) = @subs[$i, $i+1];
-            cluck('sub named "new" is not allowed'), 
-                next if $name eq 'new';
+
+            #iwar({backtrace => 1}, 'sub named _ is not allowed'), 
+            iwar('sub named _ is not allowed'), 
+                next if $name eq '_';
+
             my $fullname = "$class::$name";
             { 
                 no strict 'refs';
@@ -98,8 +103,16 @@ ENDEVAL
         }
     }
 
-    # Make this syntax work:
+    # _ is a special object.
+    #
+    # Call superclass methods like this:
     # $self->_->super('supermethod', arg, arg, ...)
+    #
+    # (where superclass is currently defined as the first member of ISA to
+    # have that method defined).
+    #
+    # $self->_->keys gives a list ref to the keys (accessors).
+    #
     # Eventually, more things can go in _.
     {
         my $fullname = "$class" . "::_";
@@ -107,7 +120,7 @@ ENDEVAL
             my ($self) = @_;
             my $anon_object = Fish::Class::Anon->new_obj( 
 
-                # Note, self not passed.
+                # Note, self not passed, but closed over.
                 super => sub { 
                     my ($func_name, @args) = @_;
                     my @isa = do {
@@ -127,8 +140,11 @@ ENDEVAL
                     my %sym_table = %$sym_table;
                     my $glob = $sym_table{$func_name};
                     my $func = *$glob{CODE};
+
                     $func->($self, @args)
                 },
+
+                keys => \@accessors,
             );
 
             $anon_object

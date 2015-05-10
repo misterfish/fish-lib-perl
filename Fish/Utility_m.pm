@@ -558,15 +558,6 @@ sub abbr {
     return $s;
 }
 
-sub _class_method {
-    my ($pack) = @_;
-
-    return unless $pack;
-
-    # more elegant way? XX
-    $pack eq __PACKAGE__ or $pack eq 'Fish::Utility_a'
-}
-
 # Can be noisy on stdout. Use quiet option if necessary. But there is
 # currently no option to kill stderr.
 sub yes_no {

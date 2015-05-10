@@ -16,9 +16,8 @@ BEGIN {
         warreturn iwar wartrace 
         info ask errortrace
         sayf infof askf 
-        e8 d8 remove_quoted_strings
+        e8 d8 e8_s d8_s remove_quoted_strings
         bullet bullets brack_cmd_l brack_cmd_r
-strip_ptr 
         strip strip_s strip_r
         cross check_mark brackl brackr
         shell_escape shell_escape_r shell_escape_s
@@ -38,7 +37,13 @@ use utf8;
 use Term::ANSIColor ();
 use Carp 'cluck', 'confess';
 
-#my @BULLETS = qw, ꣐ ⩕ ⨏ ⨎ ٭ ᳅ 𝇚 𝄢 𝄓 𝄋 𝁐 ,;
+# Possible ways of accessing our methods, e.g.
+# Fish::Utility_a->verbose_cmds(1)
+#
+# Because Fish::Utility_a is a sort of virtual package which includes us.
+
+my @PACKAGE = (__PACKAGE__, "Fish::Utility_a");
+
 my @BULLETS = qw, ꣐ ⩕ ٭ ᳅ 𝇚 𝄢 𝄓 𝄋 𝁐 ,;
 my $BULLET = $BULLETS[int rand @BULLETS];
 
@@ -157,10 +162,23 @@ sub sys_chomp(_@) {
 
 # Two ways to call: 
 # ($command, $die, $verbose)
-# ($command, { die => , verbose =>, list => }
-
+# ($command, { die => bool, verbose => bool, etc.}
+#
 # returns $out in list ctxt (if die is 0)
 # returns ($out, $code) in list ctxt (if die is 0)
+#
+# Possible options:
+# die => die if the command fails. (default is $Die_cmd)
+# verbose => print the command (with a green bullet) before executing it.
+#     (default is $Cmd_verbose)
+# list => evaluate the command in list context and return a list ref (i.e.,
+#     split on \n. (default is 0)
+# chomp => chomp each returned line in output (only useful if list is 1).
+#     (default is 1)
+# utf8 => decode bytes to chars in the output. (default is 0)
+# killerr => add 2>/dev/null to the cmd. (default is 0)
+# quiet => don't print to stderr if the command fails (only useful if die is
+#     0). (default is 0)
 
 sub sys(_@) {
     my ($command, $arg2, $arg3) = @_;
@@ -204,7 +222,8 @@ sub sys(_@) {
 
     my $c = remove_quoted_strings($command); # for & check
 
-    # & -> system
+    # Use 'system' if you see a '&'.
+    # Otherwise use backticks.
     if ( 
         ($c =~ m, ^ (.+) \s+ \& \s+ (.*) $ ,x) || 
         ($c =~ m, ^ (.+) \s+ \& $ ,x)
@@ -218,7 +237,6 @@ sub sys(_@) {
         system("$command");
         $out = "[cmd immediately bg'ed, output not available]";
     } 
-    # backquotes
     else {
         $command = "$command 2>/dev/null" if $kill_err;
 
@@ -230,7 +248,7 @@ sub sys(_@) {
             } `$command`;
         } else {
             $out = `$command`;
-            utf8::encode $out if $utf8;
+            d8_s($out) if $utf8;
         }
         $ret = $?;
 
@@ -249,7 +267,7 @@ sub sys(_@) {
         }
     }
 
-    # posix thing
+    # Posix thing.
     $ret >>= 8 if defined $ret and $ret > 0;
 
     if ($wants_list) {
@@ -457,6 +475,14 @@ sub ierror {
 # war { opts => }, str1, str2, ...
 # or war str1, str2, ...
 # same for info.
+#
+# backtrace of -1 means show the line stamp of war (usually pointless).
+# backtrace of 0 means show the line stamp where war was called.
+# backtrace of n means step back n times.
+#
+# Might need a new opt like backtrace_verbose to show all the steps in the
+# trace.
+
 sub war {
     my ($opts, $string) = _process_info_opts(@_);
 
@@ -464,7 +490,8 @@ sub war {
     $string ||= "Something's wrong.";
 
     if ($show_line_num) {
-        my $backtrace = $opts->{backtrace} // 0;
+        my $backtrace = $opts->{backtrace} // -1;
+        $backtrace++;
         my ($package, $filename, $line) = caller $backtrace;
         $filename //= "(filename unknown)";
         $line //= "(line unknown)";
@@ -495,7 +522,9 @@ sub iwar {
     $string = join ': ', "Internal warning", @string;
     _disable_colors_temp(1) if $opts->{disable_colors};
 
-    war { show_line_num => 1, backtrace => 1 }, $string;
+    my $bt = $opts->{backtrace} // 0;
+
+    war { show_line_num => 1, backtrace => $bt }, $string;
 
     # so caller can do return iwar
     undef
@@ -597,11 +626,6 @@ sub _disable_colors_temp {
     }
 }
 
-sub strip_ptr {
-    wartrace("Deprecated: use strip_r");
-    &strip_r;
-}
-
 sub strip(_) {
     #no warnings;
     
@@ -656,15 +680,37 @@ sub _color {
 }
    
 sub e8(_) {
-    my $s = shift;
+    my $s = shift // 
+        return iwar { backtrace => 1 }, 'Missing arg for e8';
     utf8::encode $s;
-    $s;
+
+    $s
 }
 
 sub d8(_) {
-    my $s = shift;
+    my $s = shift //
+        return iwar { backtrace => 1 }, 'Missing arg for d8';
     utf8::decode $s;
-    $s;
+
+    $s
+}
+
+# d8_s and e8_s modify first arg in place (and return it too).
+
+sub d8_s(_) {
+    $_[0] // 
+        return iwar { backtrace => 1 }, 'Missing arg for d8_s';
+    utf8::decode $_[0];
+
+    $_[0]
+}
+
+sub e8_s(_) {
+    $_[0] // 
+        return iwar { backtrace => 1 }, 'Missing arg for e8_s';
+    utf8::encode $_[0];
+
+    $_[0]
 }
 
 sub remove_quoted_strings {
@@ -706,13 +752,24 @@ sub remove_quoted_strings {
     return join '', @new;
 }
  
+# Try to distinguish how a sub like verbose_cmds was called:
+#
+# Fish::Utility::verbose_cmds(1);
+# Fish::Utility->verbose_cmds(1);
+#
+# Fish::Utility_a->verbose_cmds(1);
+# Fish::Utility_a::verbose_cmds(1);
+
 sub _class_method {
     my ($pack) = @_;
 
     return unless $pack;
 
-    # more elegant way? XX
-    $pack eq __PACKAGE__ or $pack eq 'Fish::Utility_a'
+    for (@PACKAGE) {
+        return 1 if $pack eq $_;
+    }
+
+    0
 }
 
 sub rem(_) {

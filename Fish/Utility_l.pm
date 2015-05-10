@@ -11,33 +11,35 @@ BEGIN {
     ,;
 
     our @EXPORT = qw,
-        slurp slurp8 slurpn slurpn8 slurp_stdin cat catn 
+        slurp slurp8 slurpn slurpn8 slurp_stdin slurp_try
+        cat catn 
         statt
-        is_defined def 
+        is_defined def is_defined_and_false false
         unshiftr pushr shiftr popr scalarr keysr eachr
         contains containsr firstn pairwiser
         chompp rl list hash binary
         lazy mapp
-        chd
+        chd forkk
         iter iterab
     ,;
 }
-
-#use utf8;
 
 use File::stat;
 
 use Fish::Utility;
 
 =head Loaded dynamically when needed to improve startup time:
-Although runtime_import was causing a segfault with List::MoreUtils.
 
 use Fish::Iter 'iter', 'iterab';
 use List::Util 'first';
 
 =cut
 
-use List::MoreUtils 'before', 'pairwise'; #firstn, pairwiser
+# For firstn, pairwiser.
+# Doesn't import List::Util.
+use List::MoreUtils 'before', 'pairwise'; 
+
+# runtime_import was causing a segfault with List::MoreUtils as some point.
 
 # Prototype must match Fish::Iter.
 sub iter (+) {
@@ -68,10 +70,16 @@ sub hash {
 # string -> binary
 sub binary(_) { oct "0b" . $_[0] }
 
-# e.g. while (is_defined my $a = pop @b) { }
-# no prototype, or else that won't work.
+# Usage: 
+#  while (is_defined my $a = pop @b) { }
+#  if (def my $pid = forkk) { }
+#  if (false my $pid = forkk) { child_stuff() }
+#
+# Note, no prototype; that's why it works.
 sub is_defined { defined shift }
-sub def { defined shift }
+sub def { &is_defined }
+sub is_defined_and_false { my $s = shift; 1 if (defined $s and not $s) }
+sub false { &is_defined_and_false }
 
 sub rl {
     my ($fh) = @_;
@@ -140,19 +148,6 @@ sub before(&@) {
     &List::MoreUtils::before
 }
 
-#sub pairwise(&@) {
-#    #warn 'imp1';
-#    #runtime_import 'List::MoreUtils';
-#    #warn 'imp2';
-#
-#    use List::MoreUtils;
-#
-#    #&List::MoreUtils::pairwise
-#    #
-#    List::MoreUtils::pairwise(shift, shift, shift)
-#    #{ a => 1 }
-#}
-
 # Called as:
 # contains $arrayref, $search
 sub containsr($_) {
@@ -172,8 +167,9 @@ sub contains (+_) {
 }
 
 # No limit.
-sub slurp(_@) {
+sub slurp(_;$) {
     my ($arg, $opt) = @_;
+    $opt //= {};
     local $/ = wantarray ? "\n" : undef;
     my $handle;
     if (ref $arg eq 'GLOB' or ref $arg eq 'IO::Handle') {
@@ -181,26 +177,28 @@ sub slurp(_@) {
     }
     else {
         # caller can set no_die in opt
-        $handle = safeopen $arg, $opt or war, # safeopen prints msg
-            return;
+        $handle = safeopen $arg, $opt or 
+            return $opt->{quiet} ? 
+                undef :
+                war sprintf "Couldn't slurp %s.", BR $arg; # safeopen prints msg too
     }
 
     <$handle>
 }
 
-sub slurp8(_@) {
+sub slurp8(_;$) {
     my ($arg, $opt) = @_;
-    $opt ||= {};
+    $opt //= {};
     $opt->{utf8} = 1;
 
     slurp($arg, $opt)
 }
 
-sub slurpn(_@) {
+sub slurpn(_;$) {
     my ($size, $arg) = @_;
     _slurpn($size, $arg, 0);
 }
-sub slurpn8(_@) {
+sub slurpn8(_;$) {
     my ($size, $arg) = @_;
     _slurpn($size, $arg, 1);
 }
@@ -209,6 +207,18 @@ sub slurp_stdin {
     local $/ = undef;
 
     <STDIN> 
+}
+
+# Silently fail and return undef if e.g. file doesn't exist.
+
+sub slurp_try(_;$) {
+    my ($arg, $opt) = @_;
+    $opt //= {};
+    $opt->{die} = 0;
+    $opt->{quiet} = 1;
+    $opt->{killerr} = 1;
+
+    slurp($arg, $opt)
 }
 
 sub _slurpn {
@@ -290,7 +300,7 @@ sub pairwiser(&$$) {
     my ($package, $filename, $line) = caller;
 
     # Causes segfault.
-    #runtime_import 'List::MoreUtils';
+    # runtime_import 'List::MoreUtils';
 
     no strict 'refs';
     List::MoreUtils::pairwise( sub { 
@@ -316,30 +326,13 @@ sub chd(_@) {
     }
 }
 
-# XX
-sub _class_method {
-    my ($pack) = @_;
-
-    return unless $pack;
-    $pack eq __PACKAGE__ or $pack eq 'Fish::Utility_a'
-}
-
-# e.g.:
+# Usage:
 # while (def my $i = lazy 1, 9) { ... }
+#
 # Won't work if interrupted.
 # Very thread-unsafe.
-#sub lazy {
-#    my ($a, $b) = @_;
-#    state $n;
-#    $n //= $a - 1;
-#
-#    ++$n > $b ? ($n = undef) : $n
-#}
-
-# e.g.:
-# while (def my $i = lazy 1, 9) { ... }
-# Very thread-unsafe.
 # Experimental (relies on stacktrace to know when to start over).
+
 sub lazy {
     my ($a, $b) = @_;
     state ($n, $pack, $fn, $line);
@@ -365,6 +358,18 @@ sub mapp(&@) {
     my ($sub, @list) = @_;
 
     map { $sub->($_) } @list
+}
+
+# Encapsulate the error check (and warning print) of a failed fork.
+# Empty prototype to allow: my $pid = forkk // error;
+sub forkk() {
+    my $pid = fork;
+    if (not defined $pid) {
+        war "Couldn't fork:", BR $!;
+        return;
+    }
+
+    $pid
 }
 
 1;
