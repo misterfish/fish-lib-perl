@@ -1,7 +1,12 @@
+package Fish::Sq;
+
 =head
 
-Convenient and standard object-oriented way to deal with sqlite3
-databases.
+Author: Allen Haim <allen@netherrealm.net>, © 2015.
+Source: github.com/misterfish/fish-lib-perl
+Licence: GPL 2.0
+
+Convenient OO interface for sqlite3 databases.
 
 Knows about transactions, can clean up after itself, allows
 logging of sql, etc.
@@ -11,8 +16,6 @@ RaiseError and PrintError are true by default.
 This module will steal Ctl-c and has special exit routines.
 
 =cut
-
-package Fish::Sq;
 
 use 5.18.0;
 

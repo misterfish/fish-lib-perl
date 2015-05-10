@@ -1,11 +1,17 @@
-#!/usr/bin/perl 
+package Fish::Curses;
+
+=head
+
+Author: Allen Haim <allen@netherrealm.net>, © 2015.
+Source: github.com/misterfish/fish-lib-perl
+Licence: GPL 2.0
+
+=cut
 
 BEGIN {
     use File::Basename;
     push @INC, dirname $0;
 }
-
-package Fish::Curses;
 
 use constant MOOSE => 0;
 

@@ -1,19 +1,21 @@
 package Fish::Class::Anon;
 
+=head
+
+Author: Allen Haim <allen@netherrealm.net>, © 2015.
+Source: github.com/misterfish/fish-lib-perl
+Licence: GPL 2.0
+
+Not intended to be 'use'd directly. Use Fish::Class.
+
+=cut
+
 use 5.18.0;
 
 BEGIN {
     use base 'Exporter';
     our @EXPORT = qw, o om od ,;
 }
-
-=head
-
-Not intended to be 'use'd directly. Use Fish::Class.
-
-=cut
-
-# - - - - - -
 
 use Carp 'cluck', 'confess';
 

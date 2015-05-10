@@ -2,6 +2,10 @@ package Fish::Class::Common;
 
 =head
 
+Author: Allen Haim <allen@netherrealm.net>, © 2015.
+Source: github.com/misterfish/fish-lib-perl
+Licence: GPL 2.0
+
 Not intended to be 'use'd directly. Use Fish::Class.
 
 =cut

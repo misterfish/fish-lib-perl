@@ -2,7 +2,14 @@ package Fish::Class::Class;
 
 =head
 
+Author: Allen Haim <allen@netherrealm.net>, © 2015.
+Source: github.com/misterfish/fish-lib-perl
+Licence: GPL 2.0
+
 Not intended to be 'use'd directly. Use Fish::Class.
+
+An alternate to Class::XSAccessor is Object::Tiny; 
+both are fast and easy to use.
 
 =cut
 
@@ -12,9 +19,6 @@ BEGIN {
     use base 'Exporter';
     our @EXPORT = qw, class ,;
 }
-
-# An alternate to Class::XSAccessor is Object::Tiny; 
-# both are fast and easy to use.
 
 # use Object::Tiny;
 use Class::XSAccessor;

@@ -1,5 +1,14 @@
 package Fish::Utility_a;
 
+=head
+
+Author: Allen Haim <allen@netherrealm.net>, © 2015.
+Source: github.com/misterfish/fish-lib-perl
+Licence: GPL 2.0
+
+=cut
+
+
 # Umbrella package: bring in Utility, Utility_l, and Utility_m.
 # use Fish::Utility_a will import everything from every module.
 # use Fish::Utility_a 'a', 'b', 'c' to only take what you want.

@@ -1,6 +1,5 @@
-#!/usr/bin/perl
-
 package Fish::Socket::Server::tcp;
+
 use base 'Fish::Socket::Server';
 
 use 5.18.0;

@@ -1,13 +1,19 @@
-#!/usr/bin/perl
-
 package Fish::Print;
+
+=head
+
+Author: Allen Haim <allen@netherrealm.net>, © 2015.
+Source: github.com/misterfish/fish-lib-perl
+Licence: GPL 2.0
+
+=cut
 
 BEGIN {
     use File::Basename;
     push @INC, dirname $0;
 }
 
-use 5.10.0;
+use 5.18.0;
 
 use constant MOOSE => 0;
 

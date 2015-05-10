@@ -1,5 +1,13 @@
 package Fish::Utility;
 
+=head
+
+Author: Allen Haim <allen@netherrealm.net>, © 2015.
+Source: github.com/misterfish/fish-lib-perl
+Licence: GPL 2.0
+
+=cut
+
 use 5.18.0;
 
 use base 'Exporter';

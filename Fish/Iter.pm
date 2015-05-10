@@ -1,4 +1,13 @@
+package Fish::Iter;
+
 =head
+
+Author: Allen Haim <allen@netherrealm.net>, © 2015.
+Source: github.com/misterfish/fish-lib-perl
+Licence: GPL 2.0
+
+=cut
+
 
 This is correct and will not end the iteration early if something is undef.
 The $i object is defined even if one of the elements is undef.
@@ -20,7 +29,8 @@ package _Iter {
             v => 'b',
         },
         ;
-1}
+1
+}
 
 package Fish::Iter;
 
