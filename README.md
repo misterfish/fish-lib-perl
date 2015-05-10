@@ -2,6 +2,10 @@
 
 Lots of perl modules -- e.g. Fish::Utility (utilities), Fish::Class ('class' and 'o' keywords), Fish::Opt (option processing), Fish::Iter (iterate through data structures), and more.
 
+Author: Allen Haim <allen@netherrealm.net>, © 2015.
+Source: github.com/misterfish/fish-lib-perl
+Licence: GPL 2.0
+
 INSTALLATION
 ------------
 
