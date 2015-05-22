@@ -5,7 +5,7 @@ package Fish::Iter;
 Author: Allen Haim <allen@netherrealm.net>, © 2015.
 Source: github.com/misterfish/fish-lib-perl
 Licence: GPL 2.0
-Version: 0.5
+Version: 0.5.5
 
 Some new ways to loop in perl. Meant to be fast for the programmer, not the
 machine.
@@ -21,6 +21,8 @@ List::Util works.
 
 Usage:
 
+iter
+----
  while (my $i = iter @a) {
      say sprintf "idx: %s -> val: %s", $i->k, $i->v;
  }
@@ -33,29 +35,55 @@ Usage:
 
  while (my $i = iter %hash) {}
  while (my $i = iter @array) {}
- while (my $i = iterr $array_ref) {}
- while (my $i = iterr $hash_ref) {}
  while (my $i = iter @$array_ref) {}
  while (my $i = iter %$hash_ref) {}
 
+iterr
+-----
+ while (my $i = iterr $array_ref) {}
+ while (my $i = iterr $hash_ref) {}
+
+iterab
+------
  while (iterab %hash) {
      say sprintf "%s -> %s", $a, $b;
  }
  while (iterab @array) {}
- while (iterrab $array_ref) {}
- while (iterrab $hash_ref) {}
  while (iterab @$array_ref) {}
  while (iterab %$hash_ref) {}
 
-This is correct and will not end the iteration early if something is undef.
-The $i object is defined even if one of the elements is undef.
+iterrab
+-------
+ while (iterrab $array_ref) {}
+ while (iterrab $hash_ref) {}
 
-This also works, using a global object. Very thread-unsafe, and nested loops
-will obviously not work.
+it
+--
+ The following is correct and will not end the iteration early if something
+ is undef. The $i object is defined even if one of the elements is undef.
 
-Don't forget to import the function 'it'.
+ This also works, using a global object. Very thread-unsafe, and nested
+ loops will obviously not work.
+
+ Don't forget to import the function 'it'.
 
  say sprintf "%s -> %s", it->k, it->v while iter %a;
+
+subfor
+------
+ example: print even numbers.
+ $_ is the implicit variable, the loop is lazy, and you can end an iteration
+ early with return, so you can do the return and the warning (which returns
+ undef) in one line.
+
+ use Fish::Utility_m 'is_even';
+
+ subfor 1, $n, sub {
+     is_even or 
+         return war "Not even [close]!";
+ 
+     info;
+ }; 
 
 =cut
 
@@ -77,9 +105,11 @@ use 5.18.0;
 
 BEGIN {
     use base 'Exporter';
-    our @EXPORT = qw, iter iterr iterab iterrab 
-    iter_reset iter_resetr
-    it
+    our @EXPORT = qw, 
+        iter iterr iterab iterrab 
+        subfor
+        iter_reset iter_resetr
+        it
     ,;
 }
 
@@ -162,6 +192,16 @@ sub iter_resetr(_) {
 
 sub iter_reset(+) {
     iter_resetr shift;
+}
+
+# See example usage above.
+
+sub subfor {
+    my ($start, $stop, $sub) = @_;
+    local $_;
+    for ($_ = $start; $_ <= $stop; $_++) {
+        $sub->();
+    }
 }
 
 1;
