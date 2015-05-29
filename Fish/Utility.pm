@@ -794,12 +794,12 @@ sub shell_quote(_) {
 
 sub shell_quote_r {
     my ($r) = @_;
-    $$r =~ s/ " /\\"/xg;
-    $$r =~ s/ ` /\\`/xg;
-    $$r =~ s/ ! /\\!/xg;
-    $$r =~ s/ \$ /\\\$/xg;
 
-    $$r = qq,"$$r",
+    $$r =~ s, \Q$_\E ,\\$_,xg for qw, $ > < & " ( ) { } ~ ` ,;
+    $$r = qq,"$$r",;
+    # ! can't be backslashed within double quotes -- have to remove it from
+    # quotes and do \!
+    $$r =~ s, ! ,"\\!",xg;
 }
 
 # Alters input.

@@ -69,7 +69,7 @@ it
 
  say sprintf "%s -> %s", it->k, it->v while iter %a;
 
-subfor
+subfor a.k.a. forgo
 ------
  example: print even numbers.
  $_ is the implicit variable, the loop is lazy, and you can end an iteration
@@ -107,7 +107,7 @@ BEGIN {
     use base 'Exporter';
     our @EXPORT = qw, 
         iter iterr iterab iterrab 
-        subfor
+        subfor forgo
         iter_reset iter_resetr
         it
     ,;
@@ -203,6 +203,8 @@ sub subfor {
         $sub->();
     }
 }
+
+sub forgo { &subfor }
 
 1;
 
