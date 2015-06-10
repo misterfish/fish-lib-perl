@@ -5,13 +5,14 @@ package Fish::Opt;
 Author: Allen Haim <allen@netherrealm.net>, © 2015.
 Source: github.com/misterfish/fish-lib-perl
 Licence: GPL 2.0
-Version: 0.5
+Version: 0.5.1
 
 my $opt = opt {
     v   => 'f',         # flag, e.g. -v
     H   => 's',         # string, e.g. -H <hostname>
     percentage => 'r',  # real num, e.g. --percentage 3.2
     count   => 'i',     # int, e.g. -i 3
+    t   => 'ms',        # multiple strings: -t a -t b -t c
 };
 
 Second arg is optional config hash.

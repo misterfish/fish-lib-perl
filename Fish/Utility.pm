@@ -386,6 +386,7 @@ sub safeopen {
     my $file = shift;
 
     my $die = $Die_open;
+    my $verbose = $Cmd_verbose;
     my $is_dir;
 
     my $arg2 = shift;
@@ -398,6 +399,7 @@ sub safeopen {
         $is_dir = $arg2->{dir};
         $utf8 = $arg2->{utf8} || $arg2->{UTF8} || $arg2->{'utf-8'} || $arg2->{'UTF-8'};
         $quiet = $arg2->{quiet} // 0;
+        $verbose = $arg2->{verbose} // 1;
     }
     # old form
     else {
@@ -419,25 +421,28 @@ sub safeopen {
     }
 
     my $op = 
-        $file =~ />/ ? 'writing' :
-        $file =~ />>/ ? 'appending' :
-        $file =~ /\|\s*$/ ? 'pipe reading' :
-        $file =~ /^\s*\|/ ? 'pipe writing' :
+        $file =~ m, ^ > ,x ? 'writing' :
+        $file =~ m, ^ >> ,x ? 'appending' :
+        $file =~ m, \| \s* $ ,x ? 'pipe reading' :
+        $file =~ m, ^ \s* \| ,x ? 'pipe writing' :
         'reading';
 
+    if ($verbose and ($op eq 'pipe reading' or $op eq 'pipe writing')) {
+        say sprintf "%s %s", e8 G bullet, $file;
+    }
     if ( open my $fh, $file ) {
         binmode $fh, ':utf8' if $utf8;
 
         # In the case of a command, could still be an error.
         return $fh;
     } 
-    else {
-        my $e = join ' ', "Couldn't open filehandle to", R $file, "for", Y $op, "--", $!;
-        $die and error $e;
-        war $e unless $quiet;
-    }
 
-    return # error
+    # Error
+    my $e = join ' ', "Couldn't open filehandle to", R $file, "for", Y $op, "--", $!;
+    $die and error $e;
+    war $e unless $quiet;
+
+    undef
 }
 
 # Read from filehandle at least once or there may be a false error reported.
