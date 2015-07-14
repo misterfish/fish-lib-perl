@@ -663,14 +663,20 @@ sub get_url(_@) {
     }
 
     my $res = $ua->get($url);
+    my $content;
+    my $status = {};
+    $status->{code} = $res->code;
     if ($res->is_success) {
-        return $res->decoded_content;
+        $content = $res->decoded_content;
     }
     else {
         my $e = $res->status_line;
         war sprintf "Error getting url %s (%s)", BR $url, $e;
-        return;
+        $content = undef;
+        $status->{status_line} = $e;
     }
+
+    wantarray ? ($content, $status) : $content 
 }
 
 sub find_children(_@) {

@@ -5,7 +5,7 @@ package Fish::Utility;
 Author: Allen Haim <allen@netherrealm.net>, © 2015.
 Source: github.com/misterfish/fish-lib-perl
 Licence: GPL 2.0
-Version: 1.0
+Version: 1.0.1
 
 =cut
 
@@ -53,7 +53,7 @@ use Carp 'cluck', 'confess';
 
 my @PACKAGE = (__PACKAGE__, "Fish::Utility_a");
 
-my @BULLETS = qw, ꣐ ⩕ ٭ ᳅ 𝇚 𝄢 𝄓 𝄋 𝁐 ,;
+my @BULLETS = qw, ꣐ ⩕ ٭ ᳅ 𝇚 𝄢 𝄓 𝄋 𝁐 ᨁ ,;
 my $BULLET = $BULLETS[int rand @BULLETS];
 
 our $Cmd_verbose = 0;
@@ -218,6 +218,7 @@ sub sys(_@) {
     my $kill_err = $opt->{killerr} // 0;
     my $utf8 = $opt->{utf8} || $opt->{UTF8} || $opt->{'utf-8'} || $opt->{'UTF-8'} // 0;
     my $quiet = $opt->{quiet} // 0;
+    $die = 0 if $quiet; # let quiet imply no die
     my $no_chomp = do {
         my $c = $opt->{chomp} // 1;
         not $c
@@ -291,6 +292,8 @@ sub sys_system {
     $opt //= {};
     my $die = $opt->{die} // $Die_cmd;
     my $quiet = $opt->{quiet} // 0;
+
+    $die = 0 if $quiet; # let quiet imply no die
 
     strip_r(\$command);
 
@@ -800,8 +803,8 @@ sub shell_quote(_) {
 sub shell_quote_r {
     my ($r) = @_;
 
-    # Not tilde.
-    $$r =~ s, \Q$_\E ,\\$_,xg for qw, $ > < & " ( ) { } ` ,;
+    # Not tilde or ampersand or brackets or parentheses or braces
+    $$r =~ s, \Q$_\E ,\\$_,xg for qw, $ "  ,;
     $$r = qq,"$$r",;
 
     # Exclamation point can't be backslashed within double quotes -- have to remove it from quotes and do \!
