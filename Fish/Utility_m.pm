@@ -776,9 +776,13 @@ sub find_children_r {
     }
 
     my $root;
+
     # Inherits methods of both HTML::Parser and HTML::Element.
     if ($build_tree) {
         $root = HTML::TreeBuilder->new;
+
+        $$r =~ s, <script .*? > ,,xg; # look_down doesn't look inside script for some reason.
+
         # HTML::Parser
         $root->parse($$r) or iwar("Couldn't parse."),
             return ();
