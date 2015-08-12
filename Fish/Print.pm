@@ -20,13 +20,12 @@ use constant MOOSE => 0;
 use if MOOSE, 'Moose';
 use if ! MOOSE, 'Carp';
 
-#use Fish::Utility_a;
+our $AUTOLOAD;
 
 $| = 1;
 
 if (! MOOSE) {
     sub has;
-    our $AUTOLOAD;
 }
 else {
     has _prog_idx => (
