@@ -19,7 +19,7 @@ BEGIN {
     ,;
 
     our @EXPORT = qw,
-        slurp slurp8 slurpn slurpn8 slurp_stdin slurp_try
+        slurp slurp8 slurpn slurpn8 slurp_stdin slurp8_stdin slurp_try
         cat catn 
         statt
         is_defined def is_defined_and_false false
@@ -215,6 +215,14 @@ sub slurp_stdin {
     local $/ = undef;
 
     <STDIN> 
+}
+
+sub slurp8_stdin {
+    my @ret;
+    local $/ = "\n";
+    push @ret, d8 while <STDIN>;
+
+    join '', @ret
 }
 
 # Silently fail and return undef if e.g. file doesn't exist.
