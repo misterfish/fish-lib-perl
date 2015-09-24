@@ -5,7 +5,6 @@ package Fish::Opt;
 Author: Allen Haim <allen@netherrealm.net>, © 2015.
 Source: github.com/misterfish/fish-lib-perl
 Licence: GPL 2.0
-Version: 0.5.1
 
 my $opt = opt {
     v   => 'f',         # flag, e.g. -v

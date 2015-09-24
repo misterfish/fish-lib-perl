@@ -5,7 +5,6 @@ package Fish::Utility_m;
 Author: Allen Haim <allen@netherrealm.net>, © 2015.
 Source: github.com/misterfish/fish-lib-perl
 Licence: GPL 2.0
-Version: 1.0
 
 =cut
 

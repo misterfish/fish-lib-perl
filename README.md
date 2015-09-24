@@ -1,5 +1,7 @@
 # fish-lib-perl
 
+Version: 1.0.2
+
 Lots of perl modules -- e.g. Fish::Utility (utilities), Fish::Class ('class' and 'o' keywords), Fish::Opt (option processing), Fish::Iter (iterate through data structures), and more.
 
 Author: Allen Haim <allen@netherrealm.net>, © 2015.
@@ -23,6 +25,8 @@ Class::XSAccessor
  debian: libclass-xsaccessor-perl
 List::MoreUtils
  debian: liblist-moreutils-perl
+IPC::Signal
+ debian: libipc-signal-perl
 
 «occasionally used»
 

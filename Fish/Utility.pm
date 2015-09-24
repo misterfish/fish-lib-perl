@@ -5,7 +5,6 @@ package Fish::Utility;
 Author: Allen Haim <allen@netherrealm.net>, © 2015.
 Source: github.com/misterfish/fish-lib-perl
 Licence: GPL 2.0
-Version: 1.0.1
 
 =cut
 
@@ -45,6 +44,10 @@ use utf8;
 
 use Term::ANSIColor ();
 use Carp 'cluck', 'confess';
+
+use IPC::Signal;
+
+use Fish::Class 'o';
 
 # Possible ways of accessing our methods, e.g.
 # Fish::Utility_a->verbose_cmds(1)
@@ -308,11 +311,20 @@ sub sys_system {
         }
         else {
             war $e unless $quiet;
-            return $?;
         }
     }
-    
-    0
+
+    my $sigcode = $? & 127;
+    my $signame = IPC::Signal::sig_name($sigcode);
+    wantarray ? ($?, o(
+        code => $? >> 8,
+        signal => $signame,
+        signame => $signame,
+        sigcode => $sigcode,
+        signal_code => $sigcode,
+        signal_name => $signame,
+        core => $? & 128,
+    )) : $?
 }
 
 sub sysl {

@@ -5,7 +5,6 @@ package Fish::Iter;
 Author: Allen Haim <allen@netherrealm.net>, © 2015.
 Source: github.com/misterfish/fish-lib-perl
 Licence: GPL 2.0
-Version: 0.5.5
 
 Some new ways to loop in perl. Meant to be fast for the programmer, not the
 machine.
