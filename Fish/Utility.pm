@@ -28,7 +28,6 @@ BEGIN {
         bullet bullets brack_cmd_l brack_cmd_r
         strip strip_s strip_r
         cross check_mark brackl brackr
-        shell_escape shell_escape_r shell_escape_s
         shell_quote shell_quote_r shell_quote_s
         ps_running
         rem
@@ -815,45 +814,30 @@ sub shell_quote(_) {
 sub shell_quote_r {
     my ($r) = @_;
 
-    # Not tilde or ampersand or brackets or parentheses or braces
-    $$r =~ s, \Q$_\E ,\\$_,xg for qw, $ "  ,;
-    $$r = qq,"$$r",;
-
-    # Exclamation point can't be backslashed within double quotes -- have to remove it from quotes and do \!
-    $$r =~ s, ! ,"\\!",xg;
+    my $num = $$r =~ s, ' ,'\\'',xg;
+    my @chars = qw,
+        $
+        !
+        `
+        *
+        & ?
+        |
+        ( )
+        { }
+        < >
+    ,;
+    push @chars, ' ';
+    my $chars = join '', @chars;
+    my $chars_re = qr,[$chars],;
+    my $quote;
+    $quote = 1 if $$r =~ $chars_re;
+    $$r = qq,'$$r', if $quote;
 }
 
 # Alters input.
 sub shell_quote_s(_) {
     my ($s) = @_;
     shell_quote_r(\$s);
-
-    $_[0] = $s;
-}
-
-# Not intended to take an entire shell command and make it safe. Probably
-# shell_quote is the one to use.
-sub shell_escape(_) {
-    my ($s) = @_;
-    shell_escape_r(\$s);
-
-    $s
-}
-
-sub shell_escape_r {
-    my ($r) = @_;
-    $$r =~ s/ " /\\"/xg;
-    $$r =~ s/ ` /\\`/xg;
-    $$r =~ s/ ! /\\!/xg;
-    $$r =~ s/ \$ /\\\$/xg;
-
-    #$$r =~ s/ ' /\\'/xg; # right?
-}
-
-# Alters input.
-sub shell_escape_s(_) {
-    my ($s) = @_;
-    shell_escape_r(\$s);
 
     $_[0] = $s;
 }
