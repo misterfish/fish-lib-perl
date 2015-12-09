@@ -46,6 +46,7 @@ use Carp 'cluck', 'confess';
 
 use IPC::Signal;
 
+use Fish::ShellQuote;
 use Fish::Class 'o';
 
 # Possible ways of accessing our methods, e.g.
@@ -804,48 +805,10 @@ sub rem(_) {
     my ($comment) = @_;
 }
 
-sub shell_quote(_) {
-    my ($s) = @_;
-    shell_quote_r(\$s);
-
-    $s
-}
-
-sub shell_quote_r {
-    my ($r) = @_;
-
-    my $num = $$r =~ s, ' ,'\\'',xg;
-    my @chars = qw,
-        $
-        !
-        `
-        *
-        & ?
-        |
-        ( )
-        { }
-        < >
-    ,;
-    push @chars, ' ';
-    my $chars = join '', @chars;
-    my $chars_re = qr,[$chars],;
-    my $quote;
-    $quote = 1 if $$r =~ $chars_re;
-    $$r = qq,'$$r', if $quote;
-}
-
-# Alters input.
-sub shell_quote_s(_) {
-    my ($s) = @_;
-    shell_quote_r(\$s);
-
-    $_[0] = $s;
-}
-
 # Dies.
 sub ps_running(_) {
     my ($ps) = @_;
-    my $cmd = sprintf qq, ps -C %s ,, shell_quote $ps;
+    my $cmd = sprintf qq, ps -C %s ,, shell_quote($ps);
     sys_ok $cmd, { verbose => 0 }
 }
 
@@ -902,6 +865,16 @@ sub import_export_ok(_) {
         my $caller_fn_fqn = $caller_package . '::' . $func_name;
         symbol_table_alias $fn_fqn, $caller_fn_fqn, 'code';
     }
+}
+
+sub shell_quote(_) {
+    Fish::ShellQuote::shell_quote(shift);
+}
+sub shell_quote_r(_) {
+    Fish::ShellQuote::shell_quote_r(shift);
+}
+sub shell_quote_s(_) {
+    Fish::ShellQuote::shell_quote_s(shift);
 }
 
 1;
