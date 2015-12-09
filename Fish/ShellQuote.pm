@@ -15,7 +15,7 @@ sub shell_quote(_) {
     $s
 }
 
-sub shell_quote_r {
+sub shell_quote_r(_) {
     my ($r) = @_;
 
     my $num = $$r =~ s, ' ,'\\'',xg;
