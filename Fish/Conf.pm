@@ -28,7 +28,8 @@ use Fish::Utility;
 use Fish::Utility_l 'chompp', 'list', 'def';
 use Fish::Class 'o';
 
-use constant DO_CACHE => 0;
+# --- Config::IniFiles does its own caching: subsequent calls to ->val
+# return the old val unless you explicitly reload.
 
 has conf_files => (
     is => 'ro',
@@ -64,18 +65,6 @@ has _conf_files_rejected => (
 has _config => (
     is => 'rw',
     isa => sub { ierror unless ref $_[0] eq 'Config::IniFiles' },
-);
-
-# For c and cr.
-has _cache1 => (
-    is => 'rw',
-    isa => HashRef,
-);
-
-# For cr_list. 
-has _cache2 => (
-    is => 'rw',
-    isa => HashRef,
 );
 
 has _last_read_mtime => (
@@ -170,12 +159,6 @@ sub _c {
     my $type = $opt->{type};
     my $v;
 
-    my $cache;
-    if (DO_CACHE) {
-        $cache = $self->_cache1;
-        return $v if def $v = $cache->{$k};
-    }
-   
     $v = $self->_config->val($self->default_block, $k);
 
     if ($required and not defined $v) {
@@ -201,8 +184,6 @@ sub _c {
             $v;
     }
 
-    $cache->{$k} = $v if DO_CACHE;
-
     $v
 }
 
@@ -210,15 +191,8 @@ sub _c_list {
     my ($self, $key, $required) = @_;
     my $method = $required ? 'cr' : 'c';
 
-    if (DO_CACHE) {
-        my $cache = $self->_cache2;
-        return $cache->{$key} // 
-            ($cache->{$key} = [split / \s* , \s* /x, $self->$method($key)]);
-    }
-    else {
-        my $val = $self->$method($key);
-        return $val ? [split / \s* , \s* /x, $val] : [];
-    }
+    my $val = $self->$method($key);
+    return $val ? [split / \s* , \s* /x, $val] : [];
 }
 
 # Check that required keys are there.
@@ -265,9 +239,8 @@ sub _info {
 
 # - - -  Public
 
-# Check timestamps for changes. 
-# If any, clear the whole cache and reload the
-# whole config.
+# Check timestamps on config file(s) for changes. 
+# If any, reload the whole config.
 # Call any registered listeners when properties are changed.
 sub update_config {
     my ($self) = @_;
@@ -287,8 +260,6 @@ sub update_config {
     }
 
     return unless $changed;
-
-    %$_ = () for $self->_cache1, $self->_cache2;
 
     state $first = 1;
     my $oldcfg;
