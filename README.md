@@ -1,6 +1,6 @@
 # fish-lib-perl
 
-Version: 1.0.6
+Version: 1.0.7
 
 Lots of perl modules -- e.g. Fish::Utility (utilities), Fish::Class ('class' and 'o' keywords), Fish::Opt (option processing), Fish::Iter (iterate through data structures), and more.
 

@@ -25,6 +25,7 @@ sub shell_quote_r(_) {
         `
         *
         & ?
+        ;
         |
         ( )
         { }
