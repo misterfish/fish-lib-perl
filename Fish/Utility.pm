@@ -244,7 +244,7 @@ sub sys(_@) {
     {
         my $redirect = ">/dev/null";
         $redirect .= ' 2>/dev/null' if $kill_err;
-        $command =~ s, & ,$redirect &,x;
+        #$command =~ s, & ,$redirect &,x;
 
         info sprintf "%s [fork] %s", G $BULLET, $command if $verbose;
         system("$command");
