@@ -70,9 +70,10 @@ sub AUTOLOAD {
         if ($self->_p->default_undef) {
             return undef;
         }
-        else {
-            ierror "Invalid property in anonymous class:", $name, "\n";
+        if ($name eq 'DESTROY') {
+            return undef;
         }
+        ierror "Invalid property in anonymous class:", $name, "\n";
     }
 
     my $thing = $self->{$name};
