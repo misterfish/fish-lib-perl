@@ -400,8 +400,8 @@ sub safeopen {
 
     my $file = shift;
 
-    my $die = $Die_open;
-    my $verbose = $Cmd_verbose;
+    my $die;
+    my $verbose;
     my $is_dir;
 
     my $arg2 = shift;
@@ -410,15 +410,15 @@ sub safeopen {
     my $quiet;
     if (ref $arg2 eq 'HASH') {
         # require an arg to open dirs, to avoid mistakes.
-        $die = $arg2->{die};
+        $die = $arg2->{die} // $Die_open;
         $is_dir = $arg2->{dir};
         $utf8 = $arg2->{utf8} || $arg2->{UTF8} || $arg2->{'utf-8'} || $arg2->{'UTF-8'};
         $quiet = $arg2->{quiet} // 0;
-        $verbose = $arg2->{verbose} // 1;
+        $verbose = $arg2->{verbose} // $Cmd_verbose;
     }
     # old form
     else {
-        $die = $arg2;
+        $die = $arg2 // $Die_open;
     }
 
     if ( -d $file ) {
