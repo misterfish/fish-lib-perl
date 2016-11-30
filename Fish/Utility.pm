@@ -84,7 +84,7 @@ sub e8(_);
 sub error;
 sub war;
 sub wartrace;
-sub info(_@);
+sub info;
 sub safeopen;
 sub ps_running(_);
 
@@ -597,7 +597,7 @@ sub errortrace {
 }
 
 # Expects char string.
-sub info(_@) {
+sub info {
     return unless $Info_level;
     my ($opts, $string) = _process_info_opts(@_);
 
