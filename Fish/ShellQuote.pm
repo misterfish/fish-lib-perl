@@ -18,7 +18,7 @@ sub shell_quote(_) {
 sub shell_quote_r(_) {
     my ($r) = @_;
 
-    my $num = $$r =~ s, ' ,'\\'',xg;
+    my $num_single_quote = $$r =~ s, ' ,'\\'',xg;
     my @chars = qw,
         $
         !
@@ -34,9 +34,9 @@ sub shell_quote_r(_) {
     push @chars, ' ';
     my $chars = join '', @chars;
     my $chars_re = qr,[$chars],;
-    my $quote;
-    $quote = 1 if $$r =~ $chars_re;
-    $$r = qq,'$$r', if $quote;
+    my $should_quote;
+    $should_quote = 1 if $num_single_quote or $$r =~ $chars_re;
+    $$r = qq,'$$r', if $should_quote;
 }
 
 # Alters input.
