@@ -67,10 +67,10 @@ sub AUTOLOAD {
     $name =~ s/.*://;
 
     if (not exists $self->{$name}) {
-        if ($self->_p->default_undef) {
+        if ($name eq 'DESTROY') {
             return undef;
         }
-        if ($name eq 'DESTROY') {
+        if ($self->_p->default_undef) {
             return undef;
         }
         ierror "Invalid property in anonymous class:", $name, "\n";
