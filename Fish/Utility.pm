@@ -15,15 +15,15 @@ use base 'Exporter';
 BEGIN {
     our @EXPORT = qw,
         runtime_import
-        sys sys_system sys_chomp sys_ok sys_code 
-        sysl sysll 
-        safeopen safeopen_try safeclose 
+        sys sys_system sys_chomp sys_ok sys_code
+        sysl sysll
+        safeopen safeopen_try safeclose
         info_level verbose_cmds die_cmds die_open
         error ierror errortrace
-        war warl war0 
-        warreturn iwar wartrace 
+        war warl war0
+        warreturn iwar wartrace
         info ask errortrace
-        sayf infof askf 
+        sayf infof askf
         e8 d8 e8_s d8_s remove_quoted_strings
         bullet bullets brack_cmd_l brack_cmd_r
         strip strip_s strip_r
@@ -149,7 +149,7 @@ sub GREY ($$)   { my $a = shift; return _color("grey$a", $_[0]) }
 
 sub RESET           { return color('reset') }
 
-sub disable_colors { 
+sub disable_colors {
     $Disable_colors = 1;
     $Force_colors = 0;
 }
@@ -172,7 +172,7 @@ sub sys_chomp(_@) {
     wantarray ? ($ret, $code) : $ret
 }
 
-# Two ways to call: 
+# Two ways to call:
 # ($command, $die, $verbose)
 # ($command, { die => bool, verbose => bool, etc.}
 #
@@ -237,8 +237,8 @@ sub sys(_@) {
 
     # Use 'system' if you see a '&'.
     # Otherwise use backticks.
-    if ( 
-        ($c =~ m, ^ (.+) \s+ \& \s+ (.*) $ ,x) || 
+    if (
+        ($c =~ m, ^ (.+) \s+ \& \s+ (.*) $ ,x) ||
         ($c =~ m, ^ (.+) \s+ \& $ ,x)
     )
     {
@@ -249,14 +249,14 @@ sub sys(_@) {
         info sprintf "%s [fork] %s", G $BULLET, $command if $verbose;
         system("$command");
         $out = "[cmd immediately bg'ed, output not available]";
-    } 
+    }
     else {
         $command = "$command 2>/dev/null" if $kill_err;
 
         say sprintf "%s %s", G e8 $BULLET, $command if $verbose;
         if ($wants_list) {
-            @out = map { 
-                chomp unless $no_chomp; 
+            @out = map {
+                chomp unless $no_chomp;
                 $utf8 ? d8 $_ : $_
             } `$command`;
         } else {
@@ -298,14 +298,23 @@ sub sys_system {
 
     $die = 0 if $quiet; # let quiet imply no die
 
-    strip_r(\$command);
+    my @command;
+    if (ref $command eq 'ARRAY') {
+        @command = @$command;
+    }
+    else {
+        strip_r(\$command);
+        @command = ($command);
+    }
+
+    my $command_str = join ' ', map { shell_quote } @command;
 
     my $verbose = $opt->{verbose} // $Cmd_verbose // 1;
-    say sprintf "%s %s", G e8 $BULLET, $command if $verbose;
-    
-    system $command;
+    say sprintf "%s %s", G e8 $BULLET, $command_str if $verbose;
+
+    system @command;
     if ($?) {
-        my $e = sprintf "Couldn't execute cmd %s.", BR $command;
+        my $e = sprintf "Couldn't execute cmd %s.", BR $command_str;
         if ($die) {
             error $e;
         }
@@ -329,8 +338,8 @@ sub sys_system {
 
 sub sysl {
     my ($command, $arg1, $arg2) = @_;
-    return ref $arg1 eq 'HASH' ? 
-        sys $command, { list => 1, %$arg1 } : 
+    return ref $arg1 eq 'HASH' ?
+        sys $command, { list => 1, %$arg1 } :
         sys($command, {
             die => $arg1,
             verbose => $arg2,
@@ -371,13 +380,13 @@ sub sys_ok {
 
 
 sub safeopen_try {
-    iwar("called incorrectly"), 
+    iwar("called incorrectly"),
         return if @_ > 2;
 
     my ($file, $opt) = @_;
     $opt //= {};
 
-    iwar("called incorrectly"), 
+    iwar("called incorrectly"),
         return if ref $opt ne 'HASH' or not $file;
 
     $opt->{die} = 0;
@@ -392,7 +401,7 @@ sub safeopen_try {
 # but also even if it sees quotes, for example. Then, the shell could
 # succeed, while the subcommand fails).
 # Try reading from it once (<$fh>) and also check the return value of
-# close($fh) (or use safeclose), but that's also not fool-proof. 
+# close($fh) (or use safeclose), but that's also not fool-proof.
 
 sub safeopen {
     iwar("called incorrectly"),
@@ -435,7 +444,7 @@ sub safeopen {
         }
     }
 
-    my $op = 
+    my $op =
         $file =~ m, ^ > ,x ? 'writing' :
         $file =~ m, ^ >> ,x ? 'appending' :
         $file =~ m, \| \s* $ ,x ? 'pipe reading' :
@@ -450,7 +459,7 @@ sub safeopen {
 
         # In the case of a command, could still be an error.
         return $fh;
-    } 
+    }
 
     # Error
     my $e = join ' ', "Couldn't open filehandle to", R $file, "for", Y $op, "--", $!;
@@ -472,7 +481,7 @@ sub safeclose {
         my $e = sprintf "Error (on close) with $cmd_str%s", BR $cmd, $! ? " ($!)" : '';
         $die ? error $e : war $e;
     }
-        
+
     $ok
 }
 
@@ -568,7 +577,7 @@ sub warl {
 }
 
 # A version of war which returns the first arg, and passes the rest of the
-# args through to war. 
+# args through to war.
 sub warreturn {
     my ($arg, @warning) = @_;
     war(@warning);
@@ -629,9 +638,9 @@ sub _process_info_opts {
         #wartrace("Undefined var passed to an info func"),
         #    return $opts, '[undefined]' unless defined;
 
-        push @s, 
+        push @s,
             (not defined) ? '[undef]' :
-            ref eq 'ARRAY' ? 
+            ref eq 'ARRAY' ?
             ( @$_ ? join '|', @$_ : '[empty]' ) :
             defined($hash) ?
             ( %$hash ? "\n" . join "\n", map { sprintf "%s => %s", Y $_, BB $hash->{$_} } keys %$hash : '[empty]' ) :
@@ -657,7 +666,7 @@ sub _disable_colors_temp {
 
 sub strip(_) {
     #no warnings;
-    
+
     my ($s) = @_;
     strip_r(\$s);
 
@@ -691,7 +700,7 @@ sub sayf {
     # idiosyncrasy with sprintf; doesn't like sprintf(@_)
     say sprintf shift, @_;
 }
-        
+
 sub _color {
     my ($col, $s) = @_;
     if (-t STDOUT or $Force_colors) {
@@ -707,9 +716,9 @@ sub _color {
         return $s;
     }
 }
-   
+
 sub e8(_) {
-    my $s = shift // 
+    my $s = shift //
         return iwar { backtrace => 1 }, 'Missing arg for e8';
     utf8::encode $s;
 
@@ -727,7 +736,7 @@ sub d8(_) {
 # d8_s and e8_s modify first arg in place (and return it too).
 
 sub d8_s(_) {
-    $_[0] // 
+    $_[0] //
         return iwar { backtrace => 1 }, 'Missing arg for d8_s';
     utf8::decode $_[0];
 
@@ -735,7 +744,7 @@ sub d8_s(_) {
 }
 
 sub e8_s(_) {
-    $_[0] // 
+    $_[0] //
         return iwar { backtrace => 1 }, 'Missing arg for e8_s';
     utf8::encode $_[0];
 
@@ -780,7 +789,7 @@ sub remove_quoted_strings {
     }
     return join '', @new;
 }
- 
+
 # Try to distinguish how a sub like verbose_cmds was called:
 #
 # Fish::Utility::verbose_cmds(1);
